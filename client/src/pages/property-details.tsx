@@ -127,8 +127,8 @@ export default function PropertyDetails() {
     try {
       await createNote.mutateAsync({ propertyId, data: { content: newNote } });
       setNewNote("");
-      queryClient.invalidateQueries({ queryKey: [api.properties.list.path] });
-      queryClient.invalidateQueries({ queryKey: [api.properties.get.path, propertyId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/properties", propertyId] });
     } catch (error: any) {
       toast({ title: "Erro", description: error.message || "Falha ao adicionar nota.", variant: "destructive" });
     }
@@ -388,10 +388,15 @@ export default function PropertyDetails() {
              <div className="space-y-3">
               {expenses?.length === 0 ? <p className="text-center text-muted-foreground py-8">Nenhuma despesa registrada.</p> : expenses?.map(expense => (
                 <div key={expense.id} className="flex justify-between items-center p-4 border rounded-xl"><div><p className="font-semibold">{expense.description}</p><p className="text-xs text-muted-foreground mt-1">{expense.date ? format(new Date(expense.date), "dd/MM/yyyy", { locale: ptBR }) : "Recentemente"}</p></div><div className="flex items-center gap-4"><p className="font-bold text-destructive">-{formatCurrency(expense.amount)}</p><Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8" onClick={async () => {
-  await deleteExpense.mutateAsync({ id: expense.id, propertyId });
-  queryClient.invalidateQueries({ queryKey: [api.properties.list.path] });
-  queryClient.invalidateQueries({ queryKey: [api.properties.get.path, propertyId] });
-  queryClient.invalidateQueries({ queryKey: ["/api/all-expenses"] });
+    try {
+      await deleteExpense.mutateAsync({ id: expense.id, propertyId });
+      queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/properties", propertyId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/all-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Falha ao excluir despesa.", variant: "destructive" });
+    }
 }}><Trash2 className="h-4 w-4" /></Button></div></div>
               ))}
             </div>
