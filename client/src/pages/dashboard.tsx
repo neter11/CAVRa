@@ -90,6 +90,17 @@ export default function Dashboard() {
 
   const monthlyNet = monthlyGross - agencyCosts - totalMonthlyExpenses;
 
+  const propertyProfitData = props.map(p => {
+    const propertyExpenses = (allExpenses || []).filter(e => e.propertyId === p.id);
+    const totalExpenses = propertyExpenses.reduce((acc, e) => acc + e.amount, 0);
+    const profit = p.rentAmount - totalExpenses;
+    return {
+      name: p.name,
+      profit: profit,
+      id: p.id
+    };
+  }).sort((a, b) => b.profit - a.profit);
+
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
@@ -195,6 +206,58 @@ export default function Dashboard() {
                   <Bar dataKey="lucro" fill="#10B981" radius={[4, 4, 0, 0]} name="Lucro Líquido" />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-card border shadow-sm rounded-2xl p-6">
+            <h3 className="text-lg font-bold font-display mb-6">Lucro por Propriedade</h3>
+            <div className="h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={propertyProfitData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
+                  <Tooltip 
+                    cursor={{fill: '#F3F4F6'}} 
+                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                    formatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Bar dataKey="profit" fill="#10B981" radius={[4, 4, 0, 0]} name="Lucro" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-card border shadow-sm rounded-2xl p-6">
+            <h3 className="text-lg font-bold font-display mb-6">Ranking de Imóveis Mais Lucrativos</h3>
+            <div className="space-y-4">
+              {propertyProfitData.map((item, index) => {
+                let indicatorColor = "bg-emerald-500";
+                if (index >= propertyProfitData.length * 0.66) {
+                  indicatorColor = "bg-destructive";
+                } else if (index >= propertyProfitData.length * 0.33) {
+                  indicatorColor = "bg-amber-500";
+                }
+                
+                return (
+                  <Link key={item.id} href={`/properties/${item.id}`} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-xl transition-colors group">
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold text-muted-foreground w-6">{index + 1}️⃣</span>
+                      <div>
+                        <p className="font-bold group-hover:underline">{item.name}</p>
+                        <div className="flex items-center gap-2">
+                          <div className={cn("h-2 w-2 rounded-full", indicatorColor)} />
+                          <span className="text-xs text-muted-foreground">
+                            {index < propertyProfitData.length * 0.33 ? "Alta Lucratividade" : 
+                             index < propertyProfitData.length * 0.66 ? "Média Lucratividade" : "Baixa Lucratividade"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="font-bold text-emerald-600">{formatCurrency(item.profit)}</p>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>

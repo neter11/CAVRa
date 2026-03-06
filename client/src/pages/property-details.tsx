@@ -83,6 +83,9 @@ export default function PropertyDetails() {
 
   const netIncome = property.rentAmount - (property.isAgencyManaged ? (property.agencyFee || 0) : 0);
 
+  const totalExpensesAmount = (expenses || []).reduce((acc, e) => acc + e.amount, 0);
+  const monthlyProfit = property.rentAmount - totalExpensesAmount;
+
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
@@ -217,18 +220,18 @@ export default function PropertyDetails() {
             <p className="text-2xl font-bold font-display text-primary">{formatCurrency(property.rentAmount)}</p>
           </div>
           <div className="p-4 md:p-6 flex flex-col justify-center">
+            <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Lucro Mensal</p>
+            <p className={cn("text-2xl font-bold font-display", monthlyProfit >= 0 ? "text-emerald-600" : "text-destructive")}>
+              {formatCurrency(monthlyProfit)}
+            </p>
+          </div>
+          <div className="p-4 md:p-6 flex flex-col justify-center">
             <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Dia de Vencimento</p>
             <p className="text-2xl font-bold font-display text-amber-600">{property.rentDueDay}</p>
           </div>
           <div className="p-4 md:p-6 flex flex-col justify-center">
             <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Tipo</p>
             <p className="text-lg font-bold capitalize flex items-center gap-2"><Building className="h-5 w-5 text-muted-foreground" /> {getTypeLabel(property.type)}</p>
-          </div>
-          <div className="p-4 md:p-6 flex flex-col justify-center">
-            <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Imobiliária</p>
-            <p className="text-lg font-bold flex items-center gap-2">
-              {property.isAgencyManaged ? <><CheckCircle2 className="h-5 w-5 text-primary" /> Gerenciado</> : "Autogerido"}
-            </p>
           </div>
         </div>
       </div>
