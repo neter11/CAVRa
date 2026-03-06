@@ -5,13 +5,29 @@ import { PropertyForm } from "@/components/PropertyForm";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MapPin, Building, Search } from "lucide-react";
+import { Plus, MapPin, Building, Search, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Properties() {
   const { data: properties, isLoading } = useProperties();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [search, setSearch] = useState("");
+
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const currentDay = new Date().getDate();
+
+  const { data: rentPaymentsMonth } = useQuery({
+    queryKey: ["/api/rent-payments/summary", { month: currentMonth, year: currentYear }],
+    queryFn: async () => {
+      const res = await fetch(`/api/rent-payments/summary?month=${currentMonth}&year=${currentYear}`);
+      if (!res.ok) return [];
+      return res.json() as Promise<any[]>;
+    }
+  });
+
+  const paidPropertiesIds = new Set((rentPaymentsMonth || []).map(rp => rp.propertyId));
 
   const filteredProps = properties?.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -98,10 +114,15 @@ export default function Properties() {
                   ) : (
                     <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop" alt="Placeholder" className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-transform duration-500" />
                   )}
-                  <div className="absolute top-4 left-4">
-                    <Badge variant={property.status === 'available' ? 'default' : property.status === 'rented' ? 'secondary' : 'destructive'} className="shadow-md backdrop-blur-md bg-background/90 text-foreground">
+                  <div className="absolute top-4 left-4 flex flex-col gap-2">
+                    <Badge variant={property.status === 'available' ? 'default' : property.status === 'rented' ? 'secondary' : 'destructive'} className="shadow-md backdrop-blur-md bg-background/90 text-foreground w-fit">
                       {getStatusLabel(property.status)}
                     </Badge>
+                    {property.status === 'rented' && currentDay > property.rentDueDay && !paidPropertiesIds.has(property.id) && (
+                      <Badge variant="destructive" className="shadow-md animate-pulse gap-1 w-fit">
+                        <AlertCircle className="h-3 w-3" /> Atrasado
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <div className="p-5 flex-1 flex flex-col">

@@ -15,6 +15,7 @@ export const properties = pgTable("properties", {
   contractStart: timestamp("contract_start"),
   contractEnd: timestamp("contract_end"),
   imageUrl: text("image_url"),
+  rentDueDay: integer("rent_due_day").notNull().default(5),
 });
 
 export const notes = pgTable("notes", {

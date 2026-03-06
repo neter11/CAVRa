@@ -16,6 +16,7 @@ const formSchema = z.object({
   location: z.string().min(1, "A localização é obrigatória"),
   type: z.string().min(1, "O tipo é obrigatório"),
   rentAmount: z.coerce.number().min(0, "Deve ser um valor positivo"),
+  rentDueDay: z.coerce.number().min(1).max(31).default(5),
   isAgencyManaged: z.boolean().default(false),
   agencyFee: z.coerce.number().min(0).default(0),
   status: z.string().default("available"),
@@ -48,6 +49,7 @@ export function PropertyForm({
       location: "",
       type: "apartment",
       rentAmount: 0,
+      rentDueDay: 5,
       isAgencyManaged: false,
       agencyFee: 0,
       status: "available",
@@ -167,6 +169,18 @@ export function PropertyForm({
                 <FormItem>
                   <FormLabel>Valor do Aluguel (R$)</FormLabel>
                   <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="rentDueDay"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dia de Vencimento</FormLabel>
+                  <FormControl><Input type="number" min={1} max={31} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}

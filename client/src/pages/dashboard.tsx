@@ -1,17 +1,19 @@
 import { useProperties } from "@/hooks/use-properties";
-import { Building2, DollarSign, Home, Percent, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
+import { Building2, DollarSign, Home, Percent, ShieldCheck, TrendingDown, TrendingUp, AlertCircle, Clock } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useExpenses } from "@/hooks/use-expenses";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const { data: properties, isLoading: loadingProps } = useProperties();
   
-  // Calculate total expenses for the current month
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
+  const currentDay = new Date().getDate();
 
-  // Fetch all expenses by fetching for each property and flattening (simpler for now)
   const props = properties || [];
   
   const { data: allExpenses, isLoading: loadingExpenses } = useQuery({
@@ -55,7 +57,15 @@ export default function Dashboard() {
   const totalRented = rentedProperties.length;
   const totalAvailable = props.filter(p => p.status === "available").length;
 
-  const paidPropertiesCount = (rentPaymentsMonth || []).length;
+  const paidPropertiesIds = new Set((rentPaymentsMonth || []).map(rp => rp.propertyId));
+  const lateProperties = rentedProperties.filter(p => {
+    return currentDay > p.rentDueDay && !paidPropertiesIds.has(p.id);
+  });
+
+  const lateRentsCount = lateProperties.length;
+  const totalLateAmount = lateProperties.reduce((acc, p) => acc + p.rentAmount, 0);
+
+  const paidPropertiesCount = paidPropertiesIds.size;
   const pendingPropertiesCount = Math.max(0, totalRented - paidPropertiesCount);
   const totalExpectedRent = monthlyGross;
   const actualCollectedRent = (rentPaymentsMonth || []).reduce((acc, rp) => {
@@ -87,7 +97,7 @@ export default function Dashboard() {
   const statCards = [
     { label: "Lucro Mensal Líquido", value: formatCurrency(monthlyNet), icon: monthlyNet >= 0 ? TrendingUp : TrendingDown, color: monthlyNet >= 0 ? "text-emerald-600" : "text-destructive" },
     { label: "Aluguéis Pagos Este Mês", value: `${paidPropertiesCount} / ${totalRented}`, icon: ShieldCheck, color: "text-emerald-600" },
-    { label: "Pendentes", value: `${pendingPropertiesCount}`, icon: Home, color: "text-amber-600" },
+    { label: "Aluguéis Atrasados", value: formatCurrency(totalLateAmount), subValue: `${lateRentsCount} propriedades`, icon: AlertCircle, color: "text-destructive" },
     { label: "Propriedades Alugadas", value: `${totalRented} / ${props.length}`, icon: Home, color: "text-blue-600" },
   ];
 
@@ -107,6 +117,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
                 <h3 className={`text-2xl font-bold font-display mt-2 ${stat.color}`}>{stat.value}</h3>
+                {stat.subValue && <p className="text-xs text-muted-foreground mt-1">{stat.subValue}</p>}
               </div>
               <div className="h-10 w-10 bg-muted/50 rounded-full flex items-center justify-center">
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
@@ -115,6 +126,32 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {lateProperties.length > 0 && (
+        <div className="bg-destructive/5 border border-destructive/20 rounded-2xl overflow-hidden">
+          <div className="p-4 bg-destructive/10 border-b border-destructive/20 flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <h3 className="font-bold text-destructive">Propriedades com Pagamentos Atrasados</h3>
+          </div>
+          <div className="divide-y divide-destructive/10">
+            {lateProperties.map(p => (
+              <Link key={p.id} href={`/properties/${p.id}`} className="flex items-center justify-between p-4 hover:bg-destructive/10 transition-colors group">
+                <div className="space-y-1">
+                  <p className="font-bold group-hover:underline">{p.name}</p>
+                  <p className="text-sm text-muted-foreground">{p.location}</p>
+                </div>
+                <div className="text-right space-y-1">
+                  <p className="font-bold text-destructive">{formatCurrency(p.rentAmount)}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground justify-end">
+                    <Clock className="h-3 w-3" />
+                    <span>{currentDay - p.rentDueDay} dias de atraso (Venceu dia {p.rentDueDay})</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Edit, Trash2, Calendar, MapPin, DollarSign, Building, Percent, FileText, CheckCircle2, History, Check, X } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Calendar, MapPin, DollarSign, Building, Percent, FileText, CheckCircle2, History, Check, X, AlertCircle } from "lucide-react";
 import { useProperty, useDeleteProperty } from "@/hooks/use-properties";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -36,6 +37,8 @@ export default function PropertyDetails() {
   const deleteExpense = useDeleteExpense();
 
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+  const currentDay = new Date().getDate();
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
   const { data: payments, isLoading: loadingPayments } = useQuery({
@@ -75,6 +78,8 @@ export default function PropertyDetails() {
   if (!property) {
     return <div className="p-10 text-center"><h2 className="text-2xl font-bold">Propriedade não encontrada</h2><Link href="/properties" className="text-primary mt-4 inline-block hover:underline">Voltar para propriedades</Link></div>;
   }
+
+  const isCurrentMonthLate = property.status === "rented" && currentDay > property.rentDueDay && !payments?.some(p => p.month === currentMonth && p.year === currentYear);
 
   const netIncome = property.rentAmount - (property.isAgencyManaged ? (property.agencyFee || 0) : 0);
 
@@ -181,7 +186,23 @@ export default function PropertyDetails() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <div className="absolute bottom-6 left-6 right-6 text-white flex justify-between items-end">
             <div>
-              <Badge variant="secondary" className="mb-3 bg-white/20 backdrop-blur-md text-white border-white/10 hover:bg-white/30">{getStatusLabel(property.status)}</Badge>
+              <div className="flex items-center gap-2 mb-3">
+                <Badge variant="secondary" className="bg-white/20 backdrop-blur-md text-white border-white/10 hover:bg-white/30">{getStatusLabel(property.status)}</Badge>
+                {isCurrentMonthLate && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="destructive" className="bg-destructive/80 text-white animate-pulse gap-1">
+                          <AlertCircle className="h-3 w-3" /> Pagamento Atrasado
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Vencimento dia {property.rentDueDay}. Hoje é dia {currentDay}.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
               <h1 className="text-3xl md:text-4xl font-display font-bold text-white">{property.name}</h1>
               <div className="flex items-center mt-2 text-white/80">
                 <MapPin className="h-4 w-4 mr-1.5" /> {property.location}
@@ -196,8 +217,8 @@ export default function PropertyDetails() {
             <p className="text-2xl font-bold font-display text-primary">{formatCurrency(property.rentAmount)}</p>
           </div>
           <div className="p-4 md:p-6 flex flex-col justify-center">
-            <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Renda Líquida</p>
-            <p className="text-2xl font-bold font-display text-emerald-600">{formatCurrency(netIncome)}</p>
+            <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Dia de Vencimento</p>
+            <p className="text-2xl font-bold font-display text-amber-600">{property.rentDueDay}</p>
           </div>
           <div className="p-4 md:p-6 flex flex-col justify-center">
             <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Tipo</p>
@@ -239,6 +260,13 @@ export default function PropertyDetails() {
                     {property.contractEnd ? format(new Date(property.contractEnd), "dd/MM/yyyy", { locale: ptBR }) : "Não definido"}
                   </p>
                 </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Dia de Vencimento</p>
+                  <p className="font-semibold text-lg flex items-center gap-2 mt-1">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    Todo dia {property.rentDueDay}
+                  </p>
+                </div>
               </div>
               <div className="bg-muted/30 p-5 rounded-xl border border-muted">
                 <h4 className="font-medium mb-3 text-sm text-muted-foreground uppercase tracking-wider">Detalhamento Financeiro</h4>
@@ -269,30 +297,35 @@ export default function PropertyDetails() {
                {["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"].map((monthName, index) => {
                  const payment = payments?.find(p => p.month === index);
                  const isPaid = !!payment;
+                 const isLate = !isPaid && selectedYear <= currentYear && (selectedYear < currentYear || index <= currentMonth) && (selectedYear < currentYear || (index === currentMonth ? currentDay > property.rentDueDay : true));
                  
                  return (
                    <div 
                     key={index} 
                     className={cn(
                       "p-4 border rounded-xl transition-all flex flex-col gap-3 relative cursor-pointer group",
-                      isPaid ? "bg-emerald-50 border-emerald-200 shadow-sm" : "bg-card border-muted hover:border-primary/30"
+                      isPaid ? "bg-emerald-50 border-emerald-200 shadow-sm" : 
+                      isLate ? "bg-destructive/5 border-destructive/20 hover:border-destructive/40" : 
+                      "bg-card border-muted hover:border-primary/30"
                     )}
                     onClick={() => togglePaymentMutation.mutate({ month: index, year: selectedYear })}
                    >
                      <div className="flex justify-between items-start">
-                       <span className={cn("font-bold", isPaid ? "text-emerald-700" : "text-foreground")}>{monthName}</span>
+                       <span className={cn("font-bold", isPaid ? "text-emerald-700" : isLate ? "text-destructive" : "text-foreground")}>{monthName}</span>
                        <div className={cn(
                          "h-5 w-5 rounded border flex items-center justify-center transition-colors",
-                         isPaid ? "bg-emerald-500 border-emerald-500 text-white" : "bg-background border-muted group-hover:border-primary/50"
+                         isPaid ? "bg-emerald-500 border-emerald-500 text-white" : 
+                         isLate ? "bg-destructive/10 border-destructive/20 text-destructive" :
+                         "bg-background border-muted group-hover:border-primary/50"
                        )}>
-                         {isPaid && <Check className="h-3 w-3 stroke-[3]" />}
+                         {isPaid ? <Check className="h-3 w-3 stroke-[3]" /> : isLate ? <X className="h-3 w-3 stroke-[3]" /> : null}
                        </div>
                      </div>
                      
                      <div className="flex flex-col gap-1">
                        <div className="flex items-center gap-1">
-                         <span className={cn("text-xs font-bold", isPaid ? "text-emerald-600" : "text-muted-foreground")}>
-                           {isPaid ? "Pago" : "Pendente"}
+                         <span className={cn("text-xs font-bold", isPaid ? "text-emerald-600" : isLate ? "text-destructive" : "text-muted-foreground")}>
+                           {isPaid ? "Pago" : isLate ? "Atrasado" : "Pendente"}
                          </span>
                          {isPaid && payment.paidAt && (
                            <span className="text-[10px] text-emerald-500/80">
@@ -300,7 +333,7 @@ export default function PropertyDetails() {
                            </span>
                          )}
                        </div>
-                       <p className={cn("text-sm font-bold", isPaid ? "text-emerald-700" : "text-muted-foreground/60")}>
+                       <p className={cn("text-sm font-bold", isPaid ? "text-emerald-700" : isLate ? "text-destructive/80" : "text-muted-foreground/60")}>
                          {formatCurrency(property.rentAmount)}
                        </p>
                      </div>
