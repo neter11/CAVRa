@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Edit, Trash2, Calendar, MapPin, DollarSign, Building, Percent, FileText, CheckCircle2, History, Check, X, AlertCircle } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Calendar, MapPin, DollarSign, Building, Percent, FileText, CheckCircle2, History, Check, X, AlertCircle, Clock } from "lucide-react";
 import { useProperty, useDeleteProperty } from "@/hooks/use-properties";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
