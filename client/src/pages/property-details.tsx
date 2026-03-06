@@ -2,8 +2,11 @@ import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Edit, Trash2, Calendar, MapPin, DollarSign, Building, Percent, FileText, CheckCircle2, History } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Calendar, MapPin, DollarSign, Building, Percent, FileText, CheckCircle2, History, Check, X } from "lucide-react";
 import { useProperty, useDeleteProperty } from "@/hooks/use-properties";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 import { useNotes, useCreateNote, useDeleteNote } from "@/hooks/use-notes";
 import { useExpenses, useCreateExpense, useDeleteExpense } from "@/hooks/use-expenses";
 import { PropertyForm } from "@/components/PropertyForm";
@@ -31,6 +34,34 @@ export default function PropertyDetails() {
   const { data: expenses } = useExpenses(propertyId);
   const createExpense = useCreateExpense();
   const deleteExpense = useDeleteExpense();
+
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+
+  const { data: payments, isLoading: loadingPayments } = useQuery({
+    queryKey: [`/api/properties/${propertyId}/rent-payments`, { year: selectedYear }],
+    queryFn: async () => {
+      const res = await fetch(`/api/properties/${propertyId}/rent-payments?year=${selectedYear}`);
+      if (!res.ok) throw new Error("Falha ao carregar pagamentos");
+      return res.json() as Promise<any[]>;
+    }
+  });
+
+  const togglePaymentMutation = useMutation({
+    mutationFn: async ({ month, year }: { month: number, year: number }) => {
+      const res = await fetch(`/api/properties/${propertyId}/rent-payments/toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month, year }),
+      });
+      if (!res.ok) throw new Error("Falha ao atualizar pagamento");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/properties/${propertyId}/rent-payments`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rent-payments/summary"] });
+      toast({ title: "Sucesso", description: "Status de pagamento atualizado." });
+    }
+  });
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [newNote, setNewNote] = useState("");
@@ -225,23 +256,63 @@ export default function PropertyDetails() {
           </TabsContent>
 
           <TabsContent value="history" className="mt-0">
-             <h3 className="text-lg font-bold font-display flex items-center gap-2 border-b pb-4 mb-6"><History className="h-5 w-5 text-primary" /> Histórico de Pagamentos (Simulação)</h3>
-             <div className="space-y-4">
-               {[1,2,3].map((i) => (
-                 <div key={i} className="flex justify-between items-center p-4 border rounded-xl bg-card hover:bg-muted/50 transition-colors">
-                   <div className="flex items-center gap-4">
-                     <div className="h-10 w-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><DollarSign className="h-5 w-5" /></div>
-                     <div>
-                       <p className="font-bold">Aluguel Recebido</p>
-                       <p className="text-sm text-muted-foreground">{format(new Date(new Date().setMonth(new Date().getMonth() - i + 1)), "MMMM yyyy", { locale: ptBR })}</p>
+             <div className="flex justify-between items-center border-b pb-4 mb-6">
+               <h3 className="text-lg font-bold font-display flex items-center gap-2"><History className="h-5 w-5 text-primary" /> Histórico de Pagamentos</h3>
+               <div className="flex items-center gap-2">
+                 <Button variant="outline" size="sm" onClick={() => setSelectedYear(selectedYear - 1)}>-</Button>
+                 <span className="font-bold px-2">{selectedYear}</span>
+                 <Button variant="outline" size="sm" onClick={() => setSelectedYear(selectedYear + 1)}>+</Button>
+               </div>
+             </div>
+             
+             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+               {["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"].map((monthName, index) => {
+                 const payment = payments?.find(p => p.month === index);
+                 const isPaid = !!payment;
+                 
+                 return (
+                   <div 
+                    key={index} 
+                    className={cn(
+                      "p-4 border rounded-xl transition-all flex flex-col gap-3 relative cursor-pointer group",
+                      isPaid ? "bg-emerald-50 border-emerald-200 shadow-sm" : "bg-card border-muted hover:border-primary/30"
+                    )}
+                    onClick={() => togglePaymentMutation.mutate({ month: index, year: selectedYear })}
+                   >
+                     <div className="flex justify-between items-start">
+                       <span className={cn("font-bold", isPaid ? "text-emerald-700" : "text-foreground")}>{monthName}</span>
+                       <div className={cn(
+                         "h-5 w-5 rounded border flex items-center justify-center transition-colors",
+                         isPaid ? "bg-emerald-500 border-emerald-500 text-white" : "bg-background border-muted group-hover:border-primary/50"
+                       )}>
+                         {isPaid && <Check className="h-3 w-3 stroke-[3]" />}
+                       </div>
                      </div>
+                     
+                     <div className="flex flex-col gap-1">
+                       <div className="flex items-center gap-1">
+                         <span className={cn("text-xs font-bold", isPaid ? "text-emerald-600" : "text-muted-foreground")}>
+                           {isPaid ? "Pago" : "Pendente"}
+                         </span>
+                         {isPaid && payment.paidAt && (
+                           <span className="text-[10px] text-emerald-500/80">
+                             ({format(new Date(payment.paidAt), "dd/MM")})
+                           </span>
+                         )}
+                       </div>
+                       <p className={cn("text-sm font-bold", isPaid ? "text-emerald-700" : "text-muted-foreground/60")}>
+                         {formatCurrency(property.rentAmount)}
+                       </p>
+                     </div>
+
+                     {togglePaymentMutation.isPending && togglePaymentMutation.variables?.month === index && (
+                       <div className="absolute inset-0 bg-white/50 rounded-xl flex items-center justify-center">
+                         <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                       </div>
+                     )}
                    </div>
-                   <div className="text-right">
-                     <p className="font-bold text-lg text-emerald-600">+{formatCurrency(property.rentAmount)}</p>
-                     <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 mt-1">Pago</Badge>
-                   </div>
-                 </div>
-               ))}
+                 );
+               })}
              </div>
           </TabsContent>
 

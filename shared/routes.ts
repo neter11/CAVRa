@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertPropertySchema, properties, insertNoteSchema, notes, insertExpenseSchema, expenses, tasks, insertTaskSchema } from './schema';
+import { insertPropertySchema, insertNoteSchema, insertExpenseSchema, insertTaskSchema } from './schema';
 
 export const errorSchemas = {
   validation: z.object({ message: z.string(), field: z.string().optional() }),
@@ -48,6 +48,15 @@ const taskResponseSchema = z.object({
   createdAt: z.coerce.date().nullable(),
 });
 
+const rentPaymentResponseSchema = z.object({
+  id: z.number(),
+  propertyId: z.number(),
+  month: z.number(),
+  year: z.number(),
+  status: z.string(),
+  paidAt: z.coerce.date().nullable(),
+});
+
 export const api = {
   properties: {
     list: {
@@ -89,6 +98,26 @@ export const api = {
         204: z.void(),
         404: errorSchemas.notFound,
       },
+    },
+    rentPayments: {
+      list: {
+        method: 'GET' as const,
+        path: '/api/properties/:id/rent-payments' as const,
+        responses: { 200: z.array(rentPaymentResponseSchema) },
+      },
+      toggle: {
+        method: 'POST' as const,
+        path: '/api/properties/:id/rent-payments/toggle' as const,
+        input: z.object({ month: z.number(), year: z.number() }),
+        responses: { 200: z.void() },
+      },
+    },
+  },
+  rentPayments: {
+    summary: {
+      method: 'GET' as const,
+      path: '/api/rent-payments/summary' as const,
+      responses: { 200: z.array(rentPaymentResponseSchema) },
     },
   },
   notes: {

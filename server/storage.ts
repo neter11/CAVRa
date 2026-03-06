@@ -8,13 +8,16 @@ import {
   type InsertExpense,
   type Task,
   type InsertTask,
+  type RentPayment,
+  type InsertRentPayment,
   properties,
   notes,
   expenses,
-  tasks
+  tasks,
+  rentPayments
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // Properties
@@ -41,6 +44,11 @@ export interface IStorage {
   updateTask(id: number, task: Partial<InsertTask>): Promise<Task | undefined>;
   deleteTask(id: number): Promise<void>;
   completeTask(id: number): Promise<Task | undefined>;
+
+  // Rent Payments
+  getRentPaymentsByPropertyId(propertyId: number, year: number): Promise<RentPayment[]>;
+  toggleRentPayment(propertyId: number, month: number, year: number): Promise<void>;
+  getAllRentPaymentsForMonth(month: number, year: number): Promise<RentPayment[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -149,6 +157,52 @@ export class DatabaseStorage implements IStorage {
     }
     
     return task;
+  }
+
+  // Rent Payments
+  async getRentPaymentsByPropertyId(propertyId: number, year: number): Promise<RentPayment[]> {
+    return await db.select().from(rentPayments).where(
+      and(
+        eq(rentPayments.propertyId, propertyId),
+        eq(rentPayments.year, year)
+      )
+    );
+  }
+
+  async toggleRentPayment(propertyId: number, month: number, year: number): Promise<void> {
+    const existing = await db.select().from(rentPayments).where(
+      and(
+        eq(rentPayments.propertyId, propertyId),
+        eq(rentPayments.month, month),
+        eq(rentPayments.year, year)
+      )
+    );
+
+    if (existing.length > 0) {
+      await db.delete(rentPayments).where(
+        and(
+          eq(rentPayments.propertyId, propertyId),
+          eq(rentPayments.month, month),
+          eq(rentPayments.year, year)
+        )
+      );
+    } else {
+      await db.insert(rentPayments).values({
+        propertyId,
+        month,
+        year,
+        status: "paid"
+      });
+    }
+  }
+
+  async getAllRentPaymentsForMonth(month: number, year: number): Promise<RentPayment[]> {
+    return await db.select().from(rentPayments).where(
+      and(
+        eq(rentPayments.month, month),
+        eq(rentPayments.year, year)
+      )
+    );
   }
 }
 

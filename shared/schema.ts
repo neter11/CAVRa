@@ -43,11 +43,32 @@ export const tasks = pgTable("tasks", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const rentPayments = pgTable("rent_payments", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  month: integer("month").notNull(), // 0-11
+  year: integer("year").notNull(),
+  status: text("status").notNull().default("paid"), // currently only "paid" is stored, if not exists it's "pending"
+  paidAt: timestamp("paid_at").defaultNow(),
+});
+
 export const propertiesRelations = relations(properties, ({ many }) => ({
   notes: many(notes),
   expenses: many(expenses),
   tasks: many(tasks),
+  rentPayments: many(rentPayments),
 }));
+
+export const rentPaymentsRelations = relations(rentPayments, ({ one }) => ({
+  property: one(properties, {
+    fields: [rentPayments.propertyId],
+    references: [properties.id],
+  }),
+}));
+
+export const insertRentPaymentSchema = createInsertSchema(rentPayments).omit({ id: true, paidAt: true });
+export type RentPayment = typeof rentPayments.$inferSelect;
+export type InsertRentPayment = z.infer<typeof insertRentPaymentSchema>;
 
 export const notesRelations = relations(notes, ({ one }) => ({
   property: one(properties, {

@@ -161,6 +161,31 @@ export async function registerRoutes(
     res.status(204).end();
   });
 
+  // -- RENT PAYMENTS --
+  app.get("/api/properties/:id/rent-payments", async (req, res) => {
+    const id = Number(req.params.id);
+    const year = Number(req.query.year) || new Date().getFullYear();
+    const payments = await storage.getRentPaymentsByPropertyId(id, year);
+    res.json(payments);
+  });
+
+  app.post("/api/properties/:id/rent-payments/toggle", async (req, res) => {
+    const id = Number(req.params.id);
+    const { month, year } = z.object({
+      month: z.number(),
+      year: z.number(),
+    }).parse(req.body);
+    await storage.toggleRentPayment(id, month, year);
+    res.status(200).end();
+  });
+
+  app.get("/api/rent-payments/summary", async (req, res) => {
+    const month = Number(req.query.month) ?? new Date().getMonth();
+    const year = Number(req.query.year) ?? new Date().getFullYear();
+    const payments = await storage.getAllRentPaymentsForMonth(month, year);
+    res.json(payments);
+  });
+
   // SEED DATA
   async function seedDatabase() {
     const existingProperties = await storage.getProperties();

@@ -3,11 +3,14 @@ import { Building2, DollarSign, Home, Percent, ShieldCheck, TrendingDown, Trendi
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useExpenses } from "@/hooks/use-expenses";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@shared/routes";
 
 export default function Dashboard() {
   const { data: properties, isLoading: loadingProps } = useProperties();
   
+  // Calculate total expenses for the current month
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
   // Fetch all expenses by fetching for each property and flattening (simpler for now)
   const props = properties || [];
   
@@ -26,7 +29,18 @@ export default function Dashboard() {
     enabled: props.length > 0
   });
 
-  if (loadingProps || (props.length > 0 && loadingExpenses)) {
+  const monthlyGross = props.filter(p => p.status === "rented").reduce((acc, p) => acc + p.rentAmount, 0);
+
+  const { data: rentPaymentsMonth, isLoading: loadingRent } = useQuery({
+    queryKey: ["/api/rent-payments/summary", { month: currentMonth, year: currentYear }],
+    queryFn: async () => {
+      const res = await fetch(`/api/rent-payments/summary?month=${currentMonth}&year=${currentYear}`);
+      if (!res.ok) return [];
+      return res.json() as Promise<any[]>;
+    }
+  });
+
+  if (loadingProps || (props.length > 0 && loadingExpenses) || loadingRent) {
     return (
       <div className="p-8 space-y-6 animate-pulse">
         <div className="h-10 bg-muted rounded w-1/4"></div>
@@ -37,15 +51,19 @@ export default function Dashboard() {
     );
   }
 
-  const totalRented = props.filter(p => p.status === "rented").length;
+  const rentedProperties = props.filter(p => p.status === "rented");
+  const totalRented = rentedProperties.length;
   const totalAvailable = props.filter(p => p.status === "available").length;
+
+  const paidPropertiesCount = (rentPaymentsMonth || []).length;
+  const pendingPropertiesCount = Math.max(0, totalRented - paidPropertiesCount);
+  const totalExpectedRent = monthlyGross;
+  const actualCollectedRent = (rentPaymentsMonth || []).reduce((acc, rp) => {
+    const property = props.find(p => p.id === rp.propertyId);
+    return acc + (property?.rentAmount || 0);
+  }, 0);
   
-  const monthlyGross = props.filter(p => p.status === "rented").reduce((acc, p) => acc + p.rentAmount, 0);
   const agencyCosts = props.filter(p => p.status === "rented" && p.isAgencyManaged).reduce((acc, p) => acc + (p.agencyFee || 0), 0);
-  
-  // Calculate total expenses for the current month
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
   
   const totalMonthlyExpenses = (allExpenses || []).filter(e => {
     const d = new Date(e.date);
@@ -68,8 +86,8 @@ export default function Dashboard() {
 
   const statCards = [
     { label: "Lucro Mensal Líquido", value: formatCurrency(monthlyNet), icon: monthlyNet >= 0 ? TrendingUp : TrendingDown, color: monthlyNet >= 0 ? "text-emerald-600" : "text-destructive" },
-    { label: "Lucro Mensal Bruto", value: formatCurrency(monthlyGross), icon: Percent, color: "text-primary" },
-    { label: "Despesas Totais", value: formatCurrency(totalMonthlyExpenses + agencyCosts), icon: ShieldCheck, color: "text-amber-600" },
+    { label: "Aluguéis Pagos Este Mês", value: `${paidPropertiesCount} / ${totalRented}`, icon: ShieldCheck, color: "text-emerald-600" },
+    { label: "Pendentes", value: `${pendingPropertiesCount}`, icon: Home, color: "text-amber-600" },
     { label: "Propriedades Alugadas", value: `${totalRented} / ${props.length}`, icon: Home, color: "text-blue-600" },
   ];
 
@@ -99,25 +117,40 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-card border shadow-sm rounded-2xl p-6">
-          <h3 className="text-lg font-bold font-display mb-6">Receita vs Despesas</h3>
-          <div className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
-                <Tooltip 
-                  cursor={{fill: '#F3F4F6'}} 
-                  contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                  formatter={(value: number) => formatCurrency(value)}
-                />
-                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
-                <Bar dataKey="receita" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Receita Bruta" />
-                <Bar dataKey="despesa" fill="#F43F5E" radius={[4, 4, 0, 0]} name="Despesas" />
-                <Bar dataKey="lucro" fill="#10B981" radius={[4, 4, 0, 0]} name="Lucro Líquido" />
-              </BarChart>
-            </ResponsiveContainer>
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-card border shadow-sm rounded-2xl p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold font-display">Progresso de Recebimento ({new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date())})</h3>
+              <span className="text-sm font-bold text-primary">{formatCurrency(actualCollectedRent)} / {formatCurrency(totalExpectedRent)}</span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-4">
+              <div 
+                className="bg-primary h-4 rounded-full transition-all duration-500" 
+                style={{ width: `${Math.min(100, (actualCollectedRent / Math.max(1, totalExpectedRent)) * 100)}%` }}
+              ></div>
+            </div>
+          </div>
+
+          <div className="bg-card border shadow-sm rounded-2xl p-6">
+            <h3 className="text-lg font-bold font-display mb-6">Receita vs Despesas</h3>
+            <div className="h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
+                  <Tooltip 
+                    cursor={{fill: '#F3F4F6'}} 
+                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                    formatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
+                  <Bar dataKey="receita" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Receita Bruta" />
+                  <Bar dataKey="despesa" fill="#F43F5E" radius={[4, 4, 0, 0]} name="Despesas" />
+                  <Bar dataKey="lucro" fill="#10B981" radius={[4, 4, 0, 0]} name="Lucro Líquido" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
