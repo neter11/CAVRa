@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTasks, useCreateTask, useCompleteTask, useDeleteTask } from "@/hooks/use-tasks";
 import { useProperties } from "@/hooks/use-properties";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 
 export default function Tasks() {
+  const queryClient = useQueryClient();
   const { data: tasks, isLoading: loadingTasks } = useTasks();
   const { data: properties } = useProperties();
   const completeTask = useCompleteTask();
