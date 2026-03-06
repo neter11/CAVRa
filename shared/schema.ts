@@ -16,6 +16,7 @@ export const properties = pgTable("properties", {
   contractEnd: timestamp("contract_end"),
   imageUrl: text("image_url"),
   rentDueDay: integer("rent_due_day").notNull().default(5),
+  rentHistory: text("rent_history").array().notNull().default([]), // Array of JSON strings: { value: number, startMonth: number }
 });
 
 export const notes = pgTable("notes", {

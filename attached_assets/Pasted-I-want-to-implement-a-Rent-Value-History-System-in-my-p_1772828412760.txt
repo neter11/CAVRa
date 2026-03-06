@@ -1,0 +1,108 @@
+I want to implement a Rent Value History System in my property management application.
+
+Currently each property only has one fixed rent value, but in real life the rent price can change during the year.
+
+For example:
+
+Property rent = R$2000 from January to July
+In August the rent increases to R$2200
+So the system must understand:
+
+January → R$2000
+February → R$2000
+March → R$2000
+April → R$2000
+May → R$2000
+June → R$2000
+July → R$2000
+August → R$2200
+September → R$2200
+October → R$2200
+November → R$2200
+December → R$2200
+
+Please implement the following system.
+
+1️⃣ Rent Value History
+
+Instead of storing only one rent value, create a rent history system.
+
+Each property should allow multiple rent records.
+
+Each rent record must contain:
+
+• Rent value
+• Start month (when the value begins)
+
+Example:
+
+Rent History for Casa 1
+
+Record 1
+Value: R$2000
+Start Month: January
+
+Record 2
+Value: R$2200
+Start Month: August
+
+The system should automatically apply the correct value for each month.
+
+2️⃣ Monthly Calculation
+
+Whenever the system calculates:
+
+• Monthly revenue
+• Annual forecast
+• Payment history
+• Dashboard totals
+
+It must use the correct rent value for that specific month.
+
+Example:
+
+January → R$2000
+August → R$2200
+
+3️⃣ Rent Change Interface
+
+Inside the Property Details page, add a section called:
+
+"Histórico de Valor do Aluguel"
+
+Allow the user to:
+
+• Add a new rent value
+• Select the month when the new value starts
+• View previous values
+
+Example display:
+
+January – July → R$2000
+August – Present → R$2200
+
+4️⃣ Smart Behavior
+
+When a new rent value is added:
+
+• It should automatically apply to the remaining months of the year
+• Previous months should remain unchanged
+
+5️⃣ Dashboard Compatibility
+
+Make sure this system works with:
+
+• Late rent detection
+• Annual revenue forecast
+• Profit charts
+• Payment history
+
+All calculations must use the correct rent value per month.
+
+6️⃣ Interface Rules
+
+Keep everything:
+
+• In Brazilian Portuguese
+• Currency in R$
+• Same clean UI (white + blue theme)

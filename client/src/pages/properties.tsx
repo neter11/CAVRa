@@ -29,6 +29,13 @@ export default function Properties() {
 
   const paidPropertiesIds = new Set((rentPaymentsMonth || []).map(rp => rp.propertyId));
 
+  const getRentForMonth = (property: any, month: number) => {
+    if (!property.rentHistory || property.rentHistory.length === 0) return property.rentAmount;
+    const history = property.rentHistory.map((h: string) => JSON.parse(h)).sort((a: any, b: any) => b.startMonth - a.startMonth);
+    const record = history.find((h: any) => h.startMonth <= month);
+    return record ? record.value : property.rentAmount;
+  };
+
   const filteredProps = properties?.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
     p.location.toLowerCase().includes(search.toLowerCase())
@@ -135,7 +142,7 @@ export default function Properties() {
                   <div className="mt-auto pt-4 border-t flex justify-between items-center">
                     <div>
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Aluguel</p>
-                      <p className="font-bold text-lg text-primary">{formatCurrency(property.rentAmount)}/mês</p>
+                      <p className="font-bold text-lg text-primary">{formatCurrency(getRentForMonth(property, currentMonth))}/mês</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</p>

@@ -16,6 +16,13 @@ export default function Dashboard() {
 
   const props = properties || [];
   
+  const getRentForMonth = (property: any, month: number) => {
+    if (!property.rentHistory || property.rentHistory.length === 0) return property.rentAmount;
+    const history = property.rentHistory.map((h: string) => JSON.parse(h)).sort((a: any, b: any) => b.startMonth - a.startMonth);
+    const record = history.find((h: any) => h.startMonth <= month);
+    return record ? record.value : property.rentAmount;
+  };
+
   const { data: allExpenses, isLoading: loadingExpenses } = useQuery({
     queryKey: ["/api/all-expenses"],
     queryFn: async () => {
@@ -31,7 +38,7 @@ export default function Dashboard() {
     enabled: props.length > 0
   });
 
-  const monthlyGross = props.filter(p => p.status === "rented").reduce((acc, p) => acc + p.rentAmount, 0);
+  const monthlyGross = props.filter(p => p.status === "rented").reduce((acc, p) => acc + getRentForMonth(p, currentMonth), 0);
 
   const { data: rentPaymentsMonth, isLoading: loadingRent } = useQuery({
     queryKey: ["/api/rent-payments/summary", { month: currentMonth, year: currentYear }],
@@ -71,14 +78,14 @@ export default function Dashboard() {
   }));
 
   const lateRentsCount = lateProperties.length;
-  const totalLateAmount = lateProperties.reduce((acc, p) => acc + p.rentAmount, 0);
+  const totalLateAmount = lateProperties.reduce((acc, p) => acc + getRentForMonth(p, currentMonth), 0);
 
   const paidPropertiesCount = paidPropertiesIds.size;
   const pendingPropertiesCount = Math.max(0, totalRented - paidPropertiesCount);
   const totalExpectedRent = monthlyGross;
   const actualCollectedRent = (rentPaymentsMonth || []).reduce((acc, rp) => {
     const property = props.find(p => p.id === rp.propertyId);
-    return acc + (property?.rentAmount || 0);
+    return acc + (property ? getRentForMonth(property, currentMonth) : 0);
   }, 0);
   
   const agencyCosts = props.filter(p => p.status === "rented" && p.isAgencyManaged).reduce((acc, p) => acc + (p.agencyFee || 0), 0);
@@ -93,7 +100,8 @@ export default function Dashboard() {
   const propertyProfitData = props.map(p => {
     const propertyExpenses = (allExpenses || []).filter(e => e.propertyId === p.id);
     const totalExpenses = propertyExpenses.reduce((acc, e) => acc + e.amount, 0);
-    const profit = p.rentAmount - totalExpenses;
+    const currentRent = getRentForMonth(p, currentMonth);
+    const profit = currentRent - totalExpenses;
     return {
       name: p.name,
       profit: profit,
@@ -105,13 +113,22 @@ export default function Dashboard() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
 
-  const chartData = [
-    { name: 'Jan', receita: monthlyGross * 0.8, despesa: totalMonthlyExpenses * 0.7, lucro: (monthlyGross * 0.8) - (totalMonthlyExpenses * 0.7) },
-    { name: 'Fev', receita: monthlyGross * 0.85, despesa: totalMonthlyExpenses * 0.9, lucro: (monthlyGross * 0.85) - (totalMonthlyExpenses * 0.9) },
-    { name: 'Mar', receita: monthlyGross * 0.9, despesa: totalMonthlyExpenses * 0.8, lucro: (monthlyGross * 0.9) - (totalMonthlyExpenses * 0.8) },
-    { name: 'Abr', receita: monthlyGross * 0.95, despesa: totalMonthlyExpenses * 1.1, lucro: (monthlyGross * 0.95) - (totalMonthlyExpenses * 1.1) },
-    { name: 'Mai', receita: monthlyGross, despesa: totalMonthlyExpenses, lucro: monthlyNet },
-  ];
+  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const chartData = months.slice(0, currentMonth + 1).map((name, i) => {
+    const monthGross = props.filter(p => p.status === "rented").reduce((acc, p) => acc + getRentForMonth(p, i), 0);
+    const monthExpenses = (allExpenses || []).filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === i && d.getFullYear() === currentYear;
+    }).reduce((acc, e) => acc + e.amount, 0);
+    const monthAgency = props.filter(p => p.status === "rented" && p.isAgencyManaged).reduce((acc, p) => acc + (p.agencyFee || 0), 0);
+    
+    return {
+      name,
+      receita: monthGross,
+      despesa: monthExpenses + monthAgency,
+      lucro: monthGross - monthExpenses - monthAgency
+    };
+  });
 
   const statCards = [
     { label: "Lucro Mensal Líquido", value: formatCurrency(monthlyNet), icon: monthlyNet >= 0 ? TrendingUp : TrendingDown, color: monthlyNet >= 0 ? "text-emerald-600" : "text-destructive" },

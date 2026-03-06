@@ -67,6 +67,9 @@ export default function PropertyDetails() {
   });
 
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isRentHistoryOpen, setIsRentHistoryOpen] = useState(false);
+  const [newRentValue, setNewRentValue] = useState("");
+  const [newRentMonth, setNewRentMonth] = useState(currentMonth.toString());
   const [newNote, setNewNote] = useState("");
   const [newExpenseDesc, setNewExpenseDesc] = useState("");
   const [newExpenseAmount, setNewExpenseAmount] = useState("");
@@ -81,10 +84,18 @@ export default function PropertyDetails() {
 
   const isCurrentMonthLate = property.status === "rented" && currentDay > property.rentDueDay && !payments?.some(p => p.month === currentMonth && p.year === currentYear);
 
-  const netIncome = property.rentAmount - (property.isAgencyManaged ? (property.agencyFee || 0) : 0);
+  const getRentForMonth = (month: number) => {
+    if (!property.rentHistory || property.rentHistory.length === 0) return property.rentAmount;
+    const history = property.rentHistory.map((h: string) => JSON.parse(h)).sort((a: any, b: any) => b.startMonth - a.startMonth);
+    const record = history.find((h: any) => h.startMonth <= month);
+    return record ? record.value : property.rentAmount;
+  };
+
+  const currentRent = getRentForMonth(currentMonth);
+  const netIncome = currentRent - (property.isAgencyManaged ? (property.agencyFee || 0) : 0);
 
   const totalExpensesAmount = (expenses || []).reduce((acc, e) => acc + e.amount, 0);
-  const monthlyProfit = property.rentAmount - totalExpensesAmount;
+  const monthlyProfit = currentRent - totalExpensesAmount;
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -121,6 +132,43 @@ export default function PropertyDetails() {
     }
   };
 
+  const updateRentHistoryMutation = useMutation({
+    mutationFn: async (history: string[]) => {
+      const res = await fetch(`/api/properties/${propertyId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rentHistory: history }),
+      });
+      if (!res.ok) throw new Error("Falha ao atualizar histórico de aluguel");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/properties/${propertyId}`] });
+      toast({ title: "Sucesso", description: "Histórico de aluguel atualizado." });
+      setIsRentHistoryOpen(false);
+    }
+  });
+
+  const handleAddRentHistory = (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = Number(newRentValue);
+    const month = Number(newRentMonth);
+    if (isNaN(value) || value <= 0) return;
+
+    const currentHistory = (property.rentHistory || []).map((h: string) => JSON.parse(h));
+    const newRecord = { value, startMonth: month };
+    
+    // Replace if same month, otherwise add
+    const existingIndex = currentHistory.findIndex((h: any) => h.startMonth === month);
+    if (existingIndex > -1) {
+      currentHistory[existingIndex] = newRecord;
+    } else {
+      currentHistory.push(newRecord);
+    }
+    
+    updateRentHistoryMutation.mutate(currentHistory.map((h: any) => JSON.stringify(h)));
+  };
+
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'available': return 'DISPONÍVEL';
@@ -147,6 +195,74 @@ export default function PropertyDetails() {
           <ArrowLeft className="h-4 w-4 mr-2" /> Voltar para Propriedades
         </Link>
         <div className="flex gap-2">
+          <Dialog open={isRentHistoryOpen} onOpenChange={setIsRentHistoryOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2"><History className="h-4 w-4" /> Histórico de Aluguel</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader><DialogTitle>Histórico de Valor do Aluguel</DialogTitle></DialogHeader>
+              <div className="space-y-6 pt-4">
+                <form onSubmit={handleAddRentHistory} className="space-y-4 p-4 border rounded-xl bg-muted/30">
+                  <h4 className="font-semibold text-sm">Adicionar Novo Valor</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium">Novo Valor (R$)</label>
+                      <Input type="number" value={newRentValue} onChange={(e) => setNewRentValue(e.target.value)} placeholder="2200" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium">Mês de Início</label>
+                      <Select value={newRentMonth} onValueChange={setNewRentMonth}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"].map((m, i) => (
+                            <SelectItem key={i} value={i.toString()}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={updateRentHistoryMutation.isPending}>Salvar Alteração</Button>
+                </form>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm px-1">Registros Anteriores</h4>
+                  <div className="space-y-2">
+                    {(property.rentHistory || [])
+                      .map((h: string) => JSON.parse(h))
+                      .sort((a: any, b: any) => a.startMonth - b.startMonth)
+                      .map((record: any, idx: number, arr: any[]) => {
+                        const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                        const endMonth = arr[idx + 1] ? monthNames[arr[idx + 1].startMonth - 1] : "Presente";
+                        const period = arr[idx + 1] ? `${monthNames[record.startMonth]} – ${endMonth}` : `${monthNames[record.startMonth]} – Presente`;
+                        
+                        return (
+                          <div key={idx} className="flex justify-between items-center p-3 border rounded-lg bg-card">
+                            <div className="space-y-1">
+                              <p className="font-medium text-sm">{period}</p>
+                              <p className="text-xs text-muted-foreground font-bold text-primary">{formatCurrency(record.value)}</p>
+                            </div>
+                            {idx > 0 && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => {
+                                  const newHistory = (property.rentHistory || []).filter((_: any, i: number) => i !== idx);
+                                  updateRentHistoryMutation.mutate(newHistory);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2"><Edit className="h-4 w-4" /> Editar</Button>
@@ -345,7 +461,7 @@ export default function PropertyDetails() {
                          )}
                        </div>
                        <p className={cn("text-sm font-bold", isPaid ? "text-emerald-700" : isLate ? "text-destructive/80" : "text-muted-foreground/60")}>
-                         {formatCurrency(property.rentAmount)}
+                         {formatCurrency(getRentForMonth(index))}
                        </p>
                      </div>
 

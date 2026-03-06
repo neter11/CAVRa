@@ -198,6 +198,7 @@ export async function registerRoutes(
         isAgencyManaged: true,
         agencyFee: 350,
         status: "rented",
+        rentHistory: [JSON.stringify({ value: 3500, startMonth: 0 })],
       });
 
       const p2 = await storage.createProperty({
@@ -208,6 +209,7 @@ export async function registerRoutes(
         isAgencyManaged: false,
         agencyFee: 0,
         status: "available",
+        rentHistory: [JSON.stringify({ value: 2800, startMonth: 0 })],
       });
 
       await storage.createNote(p1.id, {

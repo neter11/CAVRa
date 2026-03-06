@@ -23,6 +23,7 @@ const formSchema = z.object({
   contractStart: z.coerce.date().optional().nullable(),
   contractEnd: z.coerce.date().optional().nullable(),
   imageUrl: z.string().optional().nullable(),
+  rentHistory: z.array(z.string()).default([]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -54,6 +55,7 @@ export function PropertyForm({
       agencyFee: 0,
       status: "available",
       imageUrl: "",
+      rentHistory: [JSON.stringify({ value: 0, startMonth: 0 })],
     },
   });
 
@@ -70,6 +72,7 @@ export function PropertyForm({
         contractEnd: values.contractEnd ? new Date(values.contractEnd) : null,
         imageUrl: values.imageUrl || null,
         agencyFee: values.isAgencyManaged ? values.agencyFee : 0,
+        rentHistory: initialData?.rentHistory || [JSON.stringify({ value: values.rentAmount, startMonth: 0 })],
       };
 
       if (initialData) {
