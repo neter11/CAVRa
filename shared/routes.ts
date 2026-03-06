@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertPropertySchema, properties, insertNoteSchema, notes, insertExpenseSchema, expenses } from './schema';
+import { insertPropertySchema, properties, insertNoteSchema, notes, insertExpenseSchema, expenses, tasks, insertTaskSchema } from './schema';
 
 export const errorSchemas = {
   validation: z.object({ message: z.string(), field: z.string().optional() }),
@@ -35,6 +35,17 @@ const expenseResponseSchema = z.object({
   description: z.string(),
   amount: z.number(),
   date: z.coerce.date().nullable(),
+});
+
+const taskResponseSchema = z.object({
+  id: z.number(),
+  propertyId: z.number(),
+  title: z.string(),
+  description: z.string().nullable(),
+  cost: z.number(),
+  dueDate: z.coerce.date().nullable(),
+  status: z.string(),
+  createdAt: z.coerce.date().nullable(),
 });
 
 export const api = {
@@ -127,6 +138,48 @@ export const api = {
         404: errorSchemas.notFound,
       },
     }
+  },
+  tasks: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/tasks' as const,
+      responses: { 200: z.array(taskResponseSchema) },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/tasks' as const,
+      input: insertTaskSchema,
+      responses: {
+        201: taskResponseSchema,
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/tasks/:id' as const,
+      input: insertTaskSchema.partial(),
+      responses: {
+        200: taskResponseSchema,
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    complete: {
+      method: 'POST' as const,
+      path: '/api/tasks/:id/complete' as const,
+      responses: {
+        200: taskResponseSchema,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/tasks/:id' as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
   }
 };
 

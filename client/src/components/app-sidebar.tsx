@@ -1,4 +1,4 @@
-import { Building2, LayoutDashboard } from "lucide-react";
+import { Building2, LayoutDashboard, ClipboardList } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -15,6 +15,7 @@ import {
 const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Propriedades", url: "/properties", icon: Building2 },
+  { title: "Tarefas", url: "/tasks", icon: ClipboardList },
 ];
 
 export function AppSidebar() {

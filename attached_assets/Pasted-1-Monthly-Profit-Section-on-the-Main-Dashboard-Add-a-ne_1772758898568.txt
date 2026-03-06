@@ -1,0 +1,118 @@
+1️⃣ Monthly Profit Section on the Main Dashboard
+
+Add a new section on the main dashboard showing:
+
+Gross Monthly Profit (Lucro Bruto Mensal)
+
+This should be the sum of all rental income from all properties for the current month.
+
+Formula example:
+
+Gross Monthly Profit =
+Sum of all property rental values.
+
+Net Monthly Profit (Lucro Líquido Mensal)
+
+This should subtract all expenses related to the properties.
+
+Formula:
+
+Net Monthly Profit =
+Gross Monthly Profit – Total Monthly Expenses
+
+Expenses include:
+
+• Maintenance tasks
+• Repairs (roof, plumbing, etc)
+• Any expense linked to a property
+
+Show both values in dashboard cards:
+
+Card 1:
+Gross Monthly Profit (R$)
+
+Card 2:
+Total Expenses (R$)
+
+Card 3:
+Net Monthly Profit (R$)
+
+Add a simple monthly chart showing profit vs expenses.
+
+2️⃣ Tasks / Maintenance Section
+
+Under the Properties menu, create a new section called:
+
+"Tarefas" (Tasks / Maintenance)
+
+This section will be used to manage repairs and things that must be done in the properties.
+
+Each task should include:
+
+• Task Title (Título da tarefa)
+• Description (Descrição do que deve ser feito)
+• Property selector (select which property the task belongs to)
+• Task Cost (Valor da tarefa)
+• Due date (optional)
+• Status (Pending / Completed)
+
+3️⃣ Task Behavior
+
+Tasks should appear in a side panel or task list.
+
+Each task must have a checkbox.
+
+When the checkbox is marked as completed:
+
+The task should automatically move to the Expenses section of that property
+
+The task cost should be added to that property's expense history
+
+The task should also be counted in the monthly expenses calculation
+
+So the workflow becomes:
+
+Create Task →
+Complete Task →
+Automatically becomes an expense of that property.
+
+4️⃣ Property Expense History
+
+Inside each property's details page, create a new section:
+
+"Despesas" (Expenses)
+
+This section should show:
+
+• Task title
+• Description
+• Cost
+• Completion date
+
+These expenses will be used to calculate:
+
+• Property profitability
+• Monthly net income
+
+5️⃣ Interface Improvements
+
+Keep everything:
+
+• In Portuguese (Brazil)
+• Currency in Brazilian Real (R$)
+• Clean dashboard layout
+• Organized cards and sections
+
+Use icons and modern UI components where possible.
+
+6️⃣ Smart Suggestions
+
+If you see opportunities to improve the system, you are encouraged to add useful features such as:
+
+• Property profit history
+• Expense charts
+• Maintenance history
+• Filters for tasks (pending / completed)
+• Property profitability indicator
+
+Be creative and make the system feel like a professional property management SaaS.

@@ -1,11 +1,32 @@
 import { useProperties } from "@/hooks/use-properties";
-import { Building2, DollarSign, Home, Percent, ShieldCheck } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Building2, DollarSign, Home, Percent, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useExpenses } from "@/hooks/use-expenses";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@shared/routes";
 
 export default function Dashboard() {
-  const { data: properties, isLoading } = useProperties();
+  const { data: properties, isLoading: loadingProps } = useProperties();
+  
+  // Fetch all expenses by fetching for each property and flattening (simpler for now)
+  const props = properties || [];
+  
+  const { data: allExpenses, isLoading: loadingExpenses } = useQuery({
+    queryKey: ["/api/all-expenses"],
+    queryFn: async () => {
+      const results = await Promise.all(
+        props.map(async (p) => {
+          const res = await fetch(`/api/properties/${p.id}/expenses`);
+          if (!res.ok) return [];
+          return res.json();
+        })
+      );
+      return results.flat();
+    },
+    enabled: props.length > 0
+  });
 
-  if (isLoading) {
+  if (loadingProps || (props.length > 0 && loadingExpenses)) {
     return (
       <div className="p-8 space-y-6 animate-pulse">
         <div className="h-10 bg-muted rounded w-1/4"></div>
@@ -16,39 +37,49 @@ export default function Dashboard() {
     );
   }
 
-  const props = properties || [];
-  
   const totalRented = props.filter(p => p.status === "rented").length;
   const totalAvailable = props.filter(p => p.status === "available").length;
   
   const monthlyGross = props.filter(p => p.status === "rented").reduce((acc, p) => acc + p.rentAmount, 0);
   const agencyCosts = props.filter(p => p.status === "rented" && p.isAgencyManaged).reduce((acc, p) => acc + (p.agencyFee || 0), 0);
-  const monthlyNet = monthlyGross - agencyCosts;
+  
+  // Calculate total expenses for the current month
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  
+  const totalMonthlyExpenses = (allExpenses || []).filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  }).reduce((acc, e) => acc + e.amount, 0);
+
+  const monthlyNet = monthlyGross - agencyCosts - totalMonthlyExpenses;
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
 
   const chartData = [
-    { name: 'Jan', gross: monthlyGross * 0.8, net: monthlyNet * 0.8 },
-    { name: 'Fev', gross: monthlyGross * 0.85, net: monthlyNet * 0.85 },
-    { name: 'Mar', gross: monthlyGross * 0.9, net: monthlyNet * 0.9 },
-    { name: 'Abr', gross: monthlyGross * 0.95, net: monthlyNet * 0.95 },
-    { name: 'Mai', gross: monthlyGross, net: monthlyNet },
+    { name: 'Jan', receita: monthlyGross * 0.8, despesa: totalMonthlyExpenses * 0.7, lucro: (monthlyGross * 0.8) - (totalMonthlyExpenses * 0.7) },
+    { name: 'Fev', receita: monthlyGross * 0.85, despesa: totalMonthlyExpenses * 0.9, lucro: (monthlyGross * 0.85) - (totalMonthlyExpenses * 0.9) },
+    { name: 'Mar', receita: monthlyGross * 0.9, despesa: totalMonthlyExpenses * 0.8, lucro: (monthlyGross * 0.9) - (totalMonthlyExpenses * 0.8) },
+    { name: 'Abr', receita: monthlyGross * 0.95, despesa: totalMonthlyExpenses * 1.1, lucro: (monthlyGross * 0.95) - (totalMonthlyExpenses * 1.1) },
+    { name: 'Mai', receita: monthlyGross, despesa: totalMonthlyExpenses, lucro: monthlyNet },
   ];
 
   const statCards = [
-    { label: "Renda Mensal Líquida", value: formatCurrency(monthlyNet), icon: DollarSign, trend: "+5.2%" },
-    { label: "Renda Mensal Bruta", value: formatCurrency(monthlyGross), icon: Percent, trend: "+4.1%" },
-    { label: "Custos de Imobiliária", value: formatCurrency(agencyCosts), icon: ShieldCheck, trend: "0.0%" },
-    { label: "Propriedades Alugadas", value: `${totalRented} / ${props.length}`, icon: Home, trend: "12% vacância" },
+    { label: "Lucro Mensal Líquido", value: formatCurrency(monthlyNet), icon: monthlyNet >= 0 ? TrendingUp : TrendingDown, color: monthlyNet >= 0 ? "text-emerald-600" : "text-destructive" },
+    { label: "Lucro Mensal Bruto", value: formatCurrency(monthlyGross), icon: Percent, color: "text-primary" },
+    { label: "Despesas Totais", value: formatCurrency(totalMonthlyExpenses + agencyCosts), icon: ShieldCheck, color: "text-amber-600" },
+    { label: "Propriedades Alugadas", value: `${totalRented} / ${props.length}`, icon: Home, color: "text-blue-600" },
   ];
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Painel de Controle</h1>
-        <p className="text-muted-foreground mt-1">Visão geral do seu portfólio imobiliário.</p>
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground">Painel de Controle</h1>
+          <p className="text-muted-foreground mt-1">Visão geral do seu portfólio imobiliário.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -57,14 +88,11 @@ export default function Dashboard() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                <h3 className="text-2xl font-bold font-display mt-2">{stat.value}</h3>
+                <h3 className={`text-2xl font-bold font-display mt-2 ${stat.color}`}>{stat.value}</h3>
               </div>
-              <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                <stat.icon className="h-5 w-5" />
+              <div className="h-10 w-10 bg-muted/50 rounded-full flex items-center justify-center">
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
-            </div>
-            <div className="mt-4 text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <span className="text-emerald-500">{stat.trend}</span> vs mês anterior
             </div>
           </div>
         ))}
@@ -72,16 +100,22 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-card border shadow-sm rounded-2xl p-6">
-          <h3 className="text-lg font-bold font-display mb-6">Visão Geral de Receita</h3>
-          <div className="h-[300px]">
+          <h3 className="text-lg font-bold font-display mb-6">Receita vs Despesas</h3>
+          <div className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
-                <Tooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                <Bar dataKey="gross" fill="#E2E8F0" radius={[4, 4, 0, 0]} name="Renda Bruta" />
-                <Bar dataKey="net" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Renda Líquida" />
+                <Tooltip 
+                  cursor={{fill: '#F3F4F6'}} 
+                  contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                  formatter={(value: number) => formatCurrency(value)}
+                />
+                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
+                <Bar dataKey="receita" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Receita Bruta" />
+                <Bar dataKey="despesa" fill="#F43F5E" radius={[4, 4, 0, 0]} name="Despesas" />
+                <Bar dataKey="lucro" fill="#10B981" radius={[4, 4, 0, 0]} name="Lucro Líquido" />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -32,9 +32,21 @@ export const expenses = pgTable("expenses", {
   date: timestamp("date").defaultNow(),
 });
 
+export const tasks = pgTable("tasks", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  cost: integer("cost").notNull(),
+  dueDate: timestamp("due_date"),
+  status: text("status").notNull().default("pending"), // pending, completed
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const propertiesRelations = relations(properties, ({ many }) => ({
   notes: many(notes),
   expenses: many(expenses),
+  tasks: many(tasks),
 }));
 
 export const notesRelations = relations(notes, ({ one }) => ({
@@ -47,6 +59,13 @@ export const notesRelations = relations(notes, ({ one }) => ({
 export const expensesRelations = relations(expenses, ({ one }) => ({
   property: one(properties, {
     fields: [expenses.propertyId],
+    references: [properties.id],
+  }),
+}));
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  property: one(properties, {
+    fields: [tasks.propertyId],
     references: [properties.id],
   }),
 }));
@@ -71,3 +90,10 @@ export const insertExpenseSchema = createInsertSchema(expenses, {
 }).omit({ id: true, date: true });
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+
+export const insertTaskSchema = createInsertSchema(tasks, {
+  cost: z.coerce.number(),
+  dueDate: z.coerce.date().optional().nullable(),
+}).omit({ id: true, createdAt: true });
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = z.infer<typeof insertTaskSchema>;

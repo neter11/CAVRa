@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "./pages/dashboard";
 import Properties from "./pages/properties";
 import PropertyDetails from "./pages/property-details";
+import Tasks from "./pages/tasks";
 import { AppSidebar } from "./components/app-sidebar";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/" component={Dashboard}/>
       <Route path="/properties" component={Properties}/>
       <Route path="/properties/:id" component={PropertyDetails}/>
+      <Route path="/tasks" component={Tasks}/>
       <Route component={NotFound} />
     </Switch>
   );

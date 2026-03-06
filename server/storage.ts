@@ -6,9 +6,12 @@ import {
   type InsertNote,
   type Expense,
   type InsertExpense,
+  type Task,
+  type InsertTask,
   properties,
   notes,
-  expenses
+  expenses,
+  tasks
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -30,6 +33,14 @@ export interface IStorage {
   getExpensesByPropertyId(propertyId: number): Promise<Expense[]>;
   createExpense(propertyId: number, expense: Omit<InsertExpense, "propertyId">): Promise<Expense>;
   deleteExpense(id: number): Promise<void>;
+
+  // Tasks
+  getTasks(): Promise<Task[]>;
+  getTask(id: number): Promise<Task | undefined>;
+  createTask(task: InsertTask): Promise<Task>;
+  updateTask(id: number, task: Partial<InsertTask>): Promise<Task | undefined>;
+  deleteTask(id: number): Promise<void>;
+  completeTask(id: number): Promise<Task | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -93,6 +104,51 @@ export class DatabaseStorage implements IStorage {
 
   async deleteExpense(id: number): Promise<void> {
     await db.delete(expenses).where(eq(expenses.id, id));
+  }
+
+  // Tasks
+  async getTasks(): Promise<Task[]> {
+    return await db.select().from(tasks);
+  }
+
+  async getTask(id: number): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task;
+  }
+
+  async createTask(insertTask: InsertTask): Promise<Task> {
+    const [task] = await db.insert(tasks).values(insertTask).returning();
+    return task;
+  }
+
+  async updateTask(id: number, updateData: Partial<InsertTask>): Promise<Task | undefined> {
+    const [task] = await db
+      .update(tasks)
+      .set(updateData)
+      .where(eq(tasks.id, id))
+      .returning();
+    return task;
+  }
+
+  async deleteTask(id: number): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
+  }
+
+  async completeTask(id: number): Promise<Task | undefined> {
+    const [task] = await db
+      .update(tasks)
+      .set({ status: "completed" })
+      .where(eq(tasks.id, id))
+      .returning();
+    
+    if (task) {
+      await this.createExpense(task.propertyId, {
+        description: `Tarefa Concluída: ${task.title}`,
+        amount: task.cost,
+      });
+    }
+    
+    return task;
   }
 }
 
