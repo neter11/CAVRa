@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, MapPin, Building, Search, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
+import { useTasks } from "@/hooks/use-tasks";
 
 export default function Properties() {
   const { data: properties, isLoading } = useProperties();
+  const { data: tasks } = useTasks();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -18,13 +20,43 @@ export default function Properties() {
   const currentYear = new Date().getFullYear();
   const currentDay = new Date().getDate();
 
+  const props = properties || [];
+
+  const { data: allExpenses } = useQuery({
+    queryKey: ["/api/all-expenses"],
+    queryFn: async () => {
+      const results = await Promise.all(
+        props.map(async (p) => {
+          const res = await fetch(`/api/properties/${p.id}/expenses`);
+          if (!res.ok) return [];
+          return res.json();
+        })
+      );
+      return results.flat();
+    },
+    enabled: props.length > 0
+  });
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const isPropertyInMaintenance = (propertyId: number) => {
+    const hasActiveTasks = (tasks || []).some(t => t.propertyId === propertyId && t.status === "pending");
+    const hasRecentExpenses = (allExpenses || []).some(e => {
+      if (e.propertyId !== propertyId || !e.date) return false;
+      return new Date(e.date) >= thirtyDaysAgo;
+    });
+    return hasActiveTasks || hasRecentExpenses;
+  };
+
   const { data: rentPaymentsMonth } = useQuery({
     queryKey: ["/api/rent-payments/summary", { month: currentMonth, year: currentYear }],
     queryFn: async () => {
       const res = await fetch(`/api/rent-payments/summary?month=${currentMonth}&year=${currentYear}`);
       if (!res.ok) return [];
       return res.json() as Promise<any[]>;
-    }
+    },
+    staleTime: 0,
   });
 
   const paidPropertiesIds = new Set((rentPaymentsMonth || []).map(rp => rp.propertyId));
@@ -122,8 +154,8 @@ export default function Properties() {
                     <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop" alt="Placeholder" className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-transform duration-500" />
                   )}
                   <div className="absolute top-4 left-4 flex flex-col gap-2">
-                    <Badge variant={property.status === 'available' ? 'default' : property.status === 'rented' ? 'secondary' : 'destructive'} className="shadow-md backdrop-blur-md bg-background/90 text-foreground w-fit">
-                      {getStatusLabel(property.status)}
+                    <Badge variant={isPropertyInMaintenance(property.id) ? 'destructive' : property.status === 'available' ? 'default' : 'secondary'} className="shadow-md backdrop-blur-md bg-background/90 text-foreground w-fit">
+                      {isPropertyInMaintenance(property.id) ? 'Em Manutenção' : getStatusLabel(property.status)}
                     </Badge>
                     {property.status === 'rented' && currentDay > property.rentDueDay && !paidPropertiesIds.has(property.id) && (
                       <Badge variant="destructive" className="shadow-md animate-pulse gap-1 w-fit">

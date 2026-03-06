@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useNotes, useCreateNote, useDeleteNote } from "@/hooks/use-notes";
 import { useExpenses, useCreateExpense, useDeleteExpense } from "@/hooks/use-expenses";
 import { PropertyForm } from "@/components/PropertyForm";
+import { useTasks } from "@/hooks/use-tasks";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -27,6 +28,7 @@ export default function PropertyDetails() {
   const { toast } = useToast();
   
   const { data: property, isLoading } = useProperty(propertyId);
+  const { data: tasks } = useTasks();
   const deleteMutation = useDeleteProperty();
   
   const { data: notes } = useNotes(propertyId);
@@ -73,7 +75,8 @@ export default function PropertyDetails() {
       const res = await fetch(`/api/properties/${propertyId}/rent-payments?year=${selectedYear}`);
       if (!res.ok) throw new Error("Falha ao carregar pagamentos");
       return res.json() as Promise<any[]>;
-    }
+    },
+    staleTime: 0,
   });
 
   const togglePaymentMutation = useMutation({
@@ -124,6 +127,8 @@ export default function PropertyDetails() {
     try {
       await createNote.mutateAsync({ propertyId, data: { content: newNote } });
       setNewNote("");
+      queryClient.invalidateQueries({ queryKey: [api.properties.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.properties.get.path, propertyId] });
     } catch (error: any) {
       toast({ title: "Erro", description: error.message || "Falha ao adicionar nota.", variant: "destructive" });
     }
@@ -136,6 +141,9 @@ export default function PropertyDetails() {
       await createExpense.mutateAsync({ propertyId, data: { description: newExpenseDesc, amount: Number(newExpenseAmount) } });
       setNewExpenseDesc("");
       setNewExpenseAmount("");
+      // Force immediate dashboard/properties refresh
+      queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/all-expenses"] });
     } catch (error: any) {
       toast({ title: "Erro", description: error.message || "Falha ao adicionar despesa.", variant: "destructive" });
     }
@@ -153,7 +161,13 @@ export default function PropertyDetails() {
     updateRentHistoryMutation.mutate(currentHistory.map((h: any) => JSON.stringify(h)));
   };
 
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const isMaintenance = (tasks || []).some(t => t.propertyId === propertyId && t.status === "pending") || 
+                        (expenses || []).some(e => e.date && new Date(e.date) >= thirtyDaysAgo);
+
   const getStatusLabel = (status: string) => {
+    if (isMaintenance) return 'MANUTENÇÃO';
     switch (status) {
       case 'available': return 'DISPONÍVEL';
       case 'rented': return 'ALUGADO';
@@ -269,7 +283,7 @@ export default function PropertyDetails() {
           <div className="absolute bottom-6 left-6 right-6 text-white flex justify-between items-end">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Badge variant="secondary" className="bg-white/20 backdrop-blur-md text-white border-white/10">{getStatusLabel(property.status)}</Badge>
+                <Badge variant={isMaintenance ? "destructive" : "secondary"} className={cn("backdrop-blur-md border-white/10", isMaintenance ? "bg-destructive/80 text-white" : "bg-white/20 text-white")}>{getStatusLabel(property.status)}</Badge>
                 {isCurrentMonthLate && (
                   <TooltipProvider><Tooltip><TooltipTrigger asChild><Badge variant="destructive" className="bg-destructive/80 text-white animate-pulse gap-1"><AlertCircle className="h-3 w-3" /> Pagamento Atrasado</Badge></TooltipTrigger><TooltipContent><p>Vencimento dia {property.rentDueDay}. Hoje é dia {currentDay}.</p></TooltipContent></Tooltip></TooltipProvider>
                 )}
@@ -373,7 +387,12 @@ export default function PropertyDetails() {
              <form onSubmit={handleAddExpense} className="mb-8 p-5 bg-muted/30 border rounded-xl space-y-4"><h4 className="font-semibold text-sm">Registrar Nova Despesa</h4><div className="flex flex-col sm:flex-row gap-4"><Input placeholder="Descrição" className="flex-[2]" value={newExpenseDesc} onChange={(e) => setNewExpenseDesc(e.target.value)} /><Input type="number" placeholder="Valor (R$)" className="flex-1" value={newExpenseAmount} onChange={(e) => setNewExpenseAmount(e.target.value)} /><Button type="submit" disabled={createExpense.isPending || !newExpenseDesc || !newExpenseAmount}>Adicionar Despesa</Button></div></form>
              <div className="space-y-3">
               {expenses?.length === 0 ? <p className="text-center text-muted-foreground py-8">Nenhuma despesa registrada.</p> : expenses?.map(expense => (
-                <div key={expense.id} className="flex justify-between items-center p-4 border rounded-xl"><div><p className="font-semibold">{expense.description}</p><p className="text-xs text-muted-foreground mt-1">{expense.date ? format(new Date(expense.date), "dd/MM/yyyy", { locale: ptBR }) : "Recentemente"}</p></div><div className="flex items-center gap-4"><p className="font-bold text-destructive">-{formatCurrency(expense.amount)}</p><Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8" onClick={() => deleteExpense.mutate({ id: expense.id, propertyId })}><Trash2 className="h-4 w-4" /></Button></div></div>
+                <div key={expense.id} className="flex justify-between items-center p-4 border rounded-xl"><div><p className="font-semibold">{expense.description}</p><p className="text-xs text-muted-foreground mt-1">{expense.date ? format(new Date(expense.date), "dd/MM/yyyy", { locale: ptBR }) : "Recentemente"}</p></div><div className="flex items-center gap-4"><p className="font-bold text-destructive">-{formatCurrency(expense.amount)}</p><Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8" onClick={async () => {
+  await deleteExpense.mutateAsync({ id: expense.id, propertyId });
+  queryClient.invalidateQueries({ queryKey: [api.properties.list.path] });
+  queryClient.invalidateQueries({ queryKey: [api.properties.get.path, propertyId] });
+  queryClient.invalidateQueries({ queryKey: ["/api/all-expenses"] });
+}}><Trash2 className="h-4 w-4" /></Button></div></div>
               ))}
             </div>
           </TabsContent>

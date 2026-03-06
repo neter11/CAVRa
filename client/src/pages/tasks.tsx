@@ -173,8 +173,13 @@ export default function Tasks() {
                     <Checkbox 
                       className="mt-1" 
                       onCheckedChange={() => {
-                        completeTask.mutate(task.id);
-                        toast({ title: "Tarefa Concluída", description: "A tarefa foi movida para despesas da propriedade." });
+                        completeTask.mutate(task.id, {
+                          onSuccess: () => {
+                            queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+                            queryClient.invalidateQueries({ queryKey: ["/api/all-expenses"] });
+                            toast({ title: "Tarefa Concluída", description: "A tarefa foi movida para despesas da propriedade." });
+                          }
+                        });
                       }}
                     />
                     <div className="flex-1 space-y-1">

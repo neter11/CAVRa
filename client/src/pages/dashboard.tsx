@@ -6,9 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useTasks } from "@/hooks/use-tasks";
 
 export default function Dashboard() {
   const { data: properties, isLoading: loadingProps } = useProperties();
+  const { data: tasks, isLoading: loadingTasks } = useTasks();
   
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -35,8 +37,21 @@ export default function Dashboard() {
       );
       return results.flat();
     },
-    enabled: props.length > 0
+    enabled: props.length > 0,
+    staleTime: 0, // Ensure fresh data
   });
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const isPropertyInMaintenance = (propertyId: number) => {
+    const hasActiveTasks = (tasks || []).some(t => t.propertyId === propertyId && t.status === "pending");
+    const hasRecentExpenses = (allExpenses || []).some(e => {
+      if (e.propertyId !== propertyId || !e.date) return false;
+      return new Date(e.date) >= thirtyDaysAgo;
+    });
+    return hasActiveTasks || hasRecentExpenses;
+  };
 
   const monthlyGross = props.filter(p => p.status === "rented").reduce((acc, p) => acc + getRentForMonth(p, currentMonth), 0);
 
@@ -46,10 +61,11 @@ export default function Dashboard() {
       const res = await fetch(`/api/rent-payments/summary?month=${currentMonth}&year=${currentYear}`);
       if (!res.ok) return [];
       return res.json() as Promise<any[]>;
-    }
+    },
+    staleTime: 0,
   });
 
-  if (loadingProps || (props.length > 0 && loadingExpenses) || loadingRent) {
+  if (loadingProps || (props.length > 0 && loadingExpenses) || loadingRent || loadingTasks) {
     return (
       <div className="p-8 space-y-6 animate-pulse">
         <div className="h-10 bg-muted rounded w-1/4"></div>
@@ -63,6 +79,7 @@ export default function Dashboard() {
   const rentedProperties = props.filter(p => p.status === "rented");
   const totalRented = rentedProperties.length;
   const totalAvailable = props.filter(p => p.status === "available").length;
+  const totalMaintenance = props.filter(p => isPropertyInMaintenance(p.id)).length;
 
   const paidPropertiesIds = new Set((rentPaymentsMonth || []).map(rp => rp.propertyId));
   const lateProperties = rentedProperties.filter(p => {
@@ -90,10 +107,13 @@ export default function Dashboard() {
   
   const agencyCosts = props.filter(p => p.status === "rented" && p.isAgencyManaged).reduce((acc, p) => acc + (p.agencyFee || 0), 0);
   
-  const totalMonthlyExpenses = (allExpenses || []).filter(e => {
+  const totalMonthlyExpenses = (allExpenses || []).reduce((acc, e) => {
     const d = new Date(e.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  }).reduce((acc, e) => acc + e.amount, 0);
+    if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+      return acc + e.amount;
+    }
+    return acc;
+  }, 0);
 
   const monthlyNet = actualCollectedRent - agencyCosts - totalMonthlyExpenses;
 
@@ -308,10 +328,10 @@ export default function Dashboard() {
             <div>
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-muted-foreground font-medium">Em Manutenção</span>
-                <span className="font-bold">{props.length - totalRented - totalAvailable}</span>
+                <span className="font-bold">{totalMaintenance}</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2.5">
-                <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: `${((props.length - totalRented - totalAvailable) / Math.max(1, props.length)) * 100}%` }}></div>
+                <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: `${(totalMaintenance / Math.max(1, props.length)) * 100}%` }}></div>
               </div>
             </div>
           </div>

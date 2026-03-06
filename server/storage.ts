@@ -17,7 +17,7 @@ import {
   rentPayments
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gte, or } from "drizzle-orm";
 
 export interface IStorage {
   // Properties

@@ -32,6 +32,9 @@ export function useCreateExpense() {
     onSuccess: (_, { propertyId }) => {
       const url = buildUrl(api.expenses.list.path, { propertyId });
       queryClient.invalidateQueries({ queryKey: [url] });
+      queryClient.invalidateQueries({ queryKey: [api.properties.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.properties.get.path, propertyId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/all-expenses"] });
     },
   });
 }
@@ -47,6 +50,9 @@ export function useDeleteExpense() {
     onSuccess: (_, { propertyId }) => {
       const url = buildUrl(api.expenses.list.path, { propertyId });
       queryClient.invalidateQueries({ queryKey: [url] });
+      queryClient.invalidateQueries({ queryKey: [api.properties.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.properties.get.path, propertyId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/all-expenses"] });
     },
   });
 }
