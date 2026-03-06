@@ -18,23 +18,46 @@ export default function Properties() {
     p.location.toLowerCase().includes(search.toLowerCase())
   );
 
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'available': return 'Disponível';
+      case 'rented': return 'Alugado';
+      case 'maintenance': return 'Manutenção';
+      default: return status;
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'apartment': return 'Apartamento';
+      case 'house': return 'Casa';
+      case 'countryside': return 'Chácara/Sítio';
+      case 'commercial': return 'Comercial';
+      default: return type;
+    }
+  };
+
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 h-full flex flex-col">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Properties</h1>
-          <p className="text-muted-foreground mt-1">Manage and track your real estate assets.</p>
+          <h1 className="text-3xl font-display font-bold text-foreground">Propriedades</h1>
+          <p className="text-muted-foreground mt-1">Gerencie e acompanhe seus ativos imobiliários.</p>
         </div>
         
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2 shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-transform">
-              <Plus className="h-4 w-4" /> Add Property
+              <Plus className="h-4 w-4" /> Adicionar Propriedade
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle className="font-display text-2xl">Add New Property</DialogTitle>
+              <DialogTitle className="font-display text-2xl">Nova Propriedade</DialogTitle>
             </DialogHeader>
             <PropertyForm onSuccess={() => setIsAddOpen(false)} />
           </DialogContent>
@@ -44,7 +67,7 @@ export default function Properties() {
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input 
-          placeholder="Search properties..." 
+          placeholder="Pesquisar propriedades..." 
           className="pl-10 bg-card border-muted-foreground/20"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -58,10 +81,10 @@ export default function Properties() {
       ) : filteredProps?.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed rounded-2xl bg-muted/30">
           <Building className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-xl font-bold font-display">No properties found</h3>
-          <p className="text-muted-foreground max-w-sm mt-2">Get started by adding your first property to manage rent, expenses, and notes.</p>
+          <h3 className="text-xl font-bold font-display">Nenhuma propriedade encontrada</h3>
+          <p className="text-muted-foreground max-w-sm mt-2">Comece adicionando sua primeira propriedade para gerenciar aluguéis, despesas e notas.</p>
           <Button variant="outline" className="mt-6" onClick={() => setIsAddOpen(true)}>
-            Add Property
+            Adicionar Propriedade
           </Button>
         </div>
       ) : (
@@ -77,7 +100,7 @@ export default function Properties() {
                   )}
                   <div className="absolute top-4 left-4">
                     <Badge variant={property.status === 'available' ? 'default' : property.status === 'rented' ? 'secondary' : 'destructive'} className="shadow-md backdrop-blur-md bg-background/90 text-foreground">
-                      {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
+                      {getStatusLabel(property.status)}
                     </Badge>
                   </div>
                 </div>
@@ -90,12 +113,12 @@ export default function Properties() {
                   
                   <div className="mt-auto pt-4 border-t flex justify-between items-center">
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Rent</p>
-                      <p className="font-bold text-lg text-primary">${property.rentAmount}/mo</p>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Aluguel</p>
+                      <p className="font-bold text-lg text-primary">{formatCurrency(property.rentAmount)}/mês</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</p>
-                      <p className="font-medium text-sm capitalize">{property.type}</p>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</p>
+                      <p className="font-medium text-sm capitalize">{getTypeLabel(property.type)}</p>
                     </div>
                   </div>
                 </div>

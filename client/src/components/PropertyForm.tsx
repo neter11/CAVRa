@@ -4,19 +4,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertPropertySchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useCreateProperty, useUpdateProperty } from "@/hooks/use-properties";
 import type { Property } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
-// Form schema explicitly parses strings to dates and numbers where needed
 const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  location: z.string().min(1, "Location is required"),
-  type: z.string().min(1, "Type is required"),
-  rentAmount: z.coerce.number().min(0, "Must be positive"),
+  name: z.string().min(1, "O nome é obrigatório"),
+  location: z.string().min(1, "A localização é obrigatória"),
+  type: z.string().min(1, "O tipo é obrigatório"),
+  rentAmount: z.coerce.number().min(0, "Deve ser um valor positivo"),
   isAgencyManaged: z.boolean().default(false),
   agencyFee: z.coerce.number().min(0).default(0),
   status: z.string().default("available"),
@@ -34,6 +33,7 @@ export function PropertyForm({
   initialData?: Property;
   onSuccess?: () => void;
 }) {
+  const { toast } = useToast();
   const createMutation = useCreateProperty();
   const updateMutation = useUpdateProperty();
 
@@ -61,20 +61,30 @@ export function PropertyForm({
   const netIncome = rent - (isAgencyManaged ? fee : 0);
 
   const onSubmit = async (values: FormValues) => {
-    // Clean up nullable dates
-    const data = {
-      ...values,
-      contractStart: values.contractStart || undefined,
-      contractEnd: values.contractEnd || undefined,
-      imageUrl: values.imageUrl || undefined,
-    };
+    try {
+      const data = {
+        ...values,
+        contractStart: values.contractStart ? new Date(values.contractStart) : null,
+        contractEnd: values.contractEnd ? new Date(values.contractEnd) : null,
+        imageUrl: values.imageUrl || null,
+        agencyFee: values.isAgencyManaged ? values.agencyFee : 0,
+      };
 
-    if (initialData) {
-      await updateMutation.mutateAsync({ id: initialData.id, updates: data });
-    } else {
-      await createMutation.mutateAsync(data);
+      if (initialData) {
+        await updateMutation.mutateAsync({ id: initialData.id, updates: data });
+        toast({ title: "Sucesso", description: "Propriedade atualizada com sucesso." });
+      } else {
+        await createMutation.mutateAsync(data);
+        toast({ title: "Sucesso", description: "Propriedade adicionada com sucesso." });
+      }
+      onSuccess?.();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Ocorreu um erro ao salvar a propriedade.",
+        variant: "destructive",
+      });
     }
-    onSuccess?.();
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -88,8 +98,8 @@ export function PropertyForm({
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Property Name</FormLabel>
-                <FormControl><Input placeholder="Sunset Apartments" {...field} /></FormControl>
+                <FormLabel>Nome da Propriedade</FormLabel>
+                <FormControl><Input placeholder="Apartamento Solar" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -99,8 +109,8 @@ export function PropertyForm({
             name="location"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Location</FormLabel>
-                <FormControl><Input placeholder="123 Main St, City" {...field} /></FormControl>
+                <FormLabel>Localização</FormLabel>
+                <FormControl><Input placeholder="Rua Principal, 123" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -110,15 +120,16 @@ export function PropertyForm({
             name="type"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Type</FormLabel>
+                <FormLabel>Tipo</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="apartment">Apartment</SelectItem>
-                    <SelectItem value="house">House</SelectItem>
-                    <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="apartment">Apartamento</SelectItem>
+                    <SelectItem value="house">Casa</SelectItem>
+                    <SelectItem value="countryside">Chácara/Sítio</SelectItem>
+                    <SelectItem value="commercial">Comercial</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -133,12 +144,12 @@ export function PropertyForm({
                 <FormLabel>Status</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="available">Available</SelectItem>
-                    <SelectItem value="rented">Rented</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                    <SelectItem value="available">Disponível</SelectItem>
+                    <SelectItem value="rented">Alugado</SelectItem>
+                    <SelectItem value="maintenance">Manutenção</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -154,7 +165,7 @@ export function PropertyForm({
               name="rentAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monthly Rent ($)</FormLabel>
+                  <FormLabel>Valor do Aluguel (R$)</FormLabel>
                   <FormControl><Input type="number" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -170,7 +181,7 @@ export function PropertyForm({
                     <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Agency Managed</FormLabel>
+                    <FormLabel>Gerenciado por Imobiliária</FormLabel>
                   </div>
                 </FormItem>
               )}
@@ -183,7 +194,7 @@ export function PropertyForm({
               name="agencyFee"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Agency Fee ($)</FormLabel>
+                  <FormLabel>Taxa da Imobiliária (R$)</FormLabel>
                   <FormControl><Input type="number" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -192,8 +203,8 @@ export function PropertyForm({
           )}
 
           <div className="pt-2 flex justify-between items-center text-sm font-medium border-t">
-            <span className="text-muted-foreground">Estimated Net Income:</span>
-            <span className="text-lg text-primary">${netIncome.toLocaleString()}/mo</span>
+            <span className="text-muted-foreground">Renda Líquida Estimada:</span>
+            <span className="text-lg text-primary">R$ {netIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês</span>
           </div>
         </div>
 
@@ -203,7 +214,7 @@ export function PropertyForm({
             name="contractStart"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Contract Start</FormLabel>
+                <FormLabel>Início do Contrato</FormLabel>
                 <FormControl>
                   <Input
                     type="date"
@@ -223,7 +234,7 @@ export function PropertyForm({
             name="contractEnd"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Contract End</FormLabel>
+                <FormLabel>Fim do Contrato</FormLabel>
                 <FormControl>
                   <Input
                     type="date"
@@ -245,7 +256,7 @@ export function PropertyForm({
           name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Image URL (Optional)</FormLabel>
+              <FormLabel>URL da Imagem (Opcional)</FormLabel>
               <FormControl><Input placeholder="https://..." {...field} value={field.value || ''} /></FormControl>
               <FormMessage />
             </FormItem>
@@ -254,7 +265,7 @@ export function PropertyForm({
 
         <div className="flex justify-end pt-4">
           <Button type="submit" disabled={isPending} className="w-full sm:w-auto px-8">
-            {isPending ? "Saving..." : initialData ? "Update Property" : "Add Property"}
+            {isPending ? "Salvando..." : initialData ? "Atualizar Propriedade" : "Adicionar Propriedade"}
           </Button>
         </div>
       </form>

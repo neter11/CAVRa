@@ -1,4 +1,4 @@
-import { Building2, LayoutDashboard, Settings } from "lucide-react";
+import { Building2, LayoutDashboard } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -14,7 +14,7 @@ import {
 
 const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Properties", url: "/properties", icon: Building2 },
+  { title: "Propriedades", url: "/properties", icon: Building2 },
 ];
 
 export function AppSidebar() {
@@ -32,7 +32,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-semibold text-muted-foreground/70">Overview</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider font-semibold text-muted-foreground/70">Visão Geral</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (

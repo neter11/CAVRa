@@ -51,7 +51,13 @@ export const expensesRelations = relations(expenses, ({ one }) => ({
   }),
 }));
 
-export const insertPropertySchema = createInsertSchema(properties).omit({ id: true });
+export const insertPropertySchema = createInsertSchema(properties, {
+  contractStart: z.coerce.date().optional().nullable(),
+  contractEnd: z.coerce.date().optional().nullable(),
+  rentAmount: z.coerce.number(),
+  agencyFee: z.coerce.number().optional().nullable(),
+}).omit({ id: true });
+
 export type Property = typeof properties.$inferSelect;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
 export type UpdatePropertyRequest = Partial<InsertProperty>;
@@ -60,6 +66,8 @@ export const insertNoteSchema = createInsertSchema(notes).omit({ id: true, creat
 export type Note = typeof notes.$inferSelect;
 export type InsertNote = z.infer<typeof insertNoteSchema>;
 
-export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true, date: true });
+export const insertExpenseSchema = createInsertSchema(expenses, {
+  amount: z.coerce.number(),
+}).omit({ id: true, date: true });
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;

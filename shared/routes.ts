@@ -7,18 +7,48 @@ export const errorSchemas = {
   internal: z.object({ message: z.string() }),
 };
 
+// Helper to create a response schema that coerces dates from JSON strings
+const propertyResponseSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  location: z.string(),
+  type: z.string(),
+  rentAmount: z.number(),
+  isAgencyManaged: z.boolean(),
+  agencyFee: z.number().nullable(),
+  status: z.string(),
+  contractStart: z.coerce.date().nullable(),
+  contractEnd: z.coerce.date().nullable(),
+  imageUrl: z.string().nullable(),
+});
+
+const noteResponseSchema = z.object({
+  id: z.number(),
+  propertyId: z.number(),
+  content: z.string(),
+  createdAt: z.coerce.date().nullable(),
+});
+
+const expenseResponseSchema = z.object({
+  id: z.number(),
+  propertyId: z.number(),
+  description: z.string(),
+  amount: z.number(),
+  date: z.coerce.date().nullable(),
+});
+
 export const api = {
   properties: {
     list: {
       method: 'GET' as const,
       path: '/api/properties' as const,
-      responses: { 200: z.array(z.custom<typeof properties.$inferSelect>()) },
+      responses: { 200: z.array(propertyResponseSchema) },
     },
     get: {
       method: 'GET' as const,
       path: '/api/properties/:id' as const,
       responses: {
-        200: z.custom<typeof properties.$inferSelect>(),
+        200: propertyResponseSchema,
         404: errorSchemas.notFound,
       },
     },
@@ -27,7 +57,7 @@ export const api = {
       path: '/api/properties' as const,
       input: insertPropertySchema,
       responses: {
-        201: z.custom<typeof properties.$inferSelect>(),
+        201: propertyResponseSchema,
         400: errorSchemas.validation,
       },
     },
@@ -36,7 +66,7 @@ export const api = {
       path: '/api/properties/:id' as const,
       input: insertPropertySchema.partial(),
       responses: {
-        200: z.custom<typeof properties.$inferSelect>(),
+        200: propertyResponseSchema,
         400: errorSchemas.validation,
         404: errorSchemas.notFound,
       },
@@ -54,14 +84,14 @@ export const api = {
     list: {
       method: 'GET' as const,
       path: '/api/properties/:propertyId/notes' as const,
-      responses: { 200: z.array(z.custom<typeof notes.$inferSelect>()) },
+      responses: { 200: z.array(noteResponseSchema) },
     },
     create: {
       method: 'POST' as const,
       path: '/api/properties/:propertyId/notes' as const,
       input: insertNoteSchema.omit({ propertyId: true }),
       responses: {
-        201: z.custom<typeof notes.$inferSelect>(),
+        201: noteResponseSchema,
         400: errorSchemas.validation,
       },
     },
@@ -78,14 +108,14 @@ export const api = {
     list: {
       method: 'GET' as const,
       path: '/api/properties/:propertyId/expenses' as const,
-      responses: { 200: z.array(z.custom<typeof expenses.$inferSelect>()) },
+      responses: { 200: z.array(expenseResponseSchema) },
     },
     create: {
       method: 'POST' as const,
       path: '/api/properties/:propertyId/expenses' as const,
       input: insertExpenseSchema.omit({ propertyId: true }),
       responses: {
-        201: z.custom<typeof expenses.$inferSelect>(),
+        201: expenseResponseSchema,
         400: errorSchemas.validation,
       },
     },
