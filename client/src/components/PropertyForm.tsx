@@ -205,7 +205,14 @@ export function PropertyForm({
               <FormItem>
                 <FormLabel>Contract Start</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} value={field.value ? field.value.toISOString().split('T')[0] : ''} />
+                  <Input
+                    type="date"
+                    value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                    onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -218,7 +225,14 @@ export function PropertyForm({
               <FormItem>
                 <FormLabel>Contract End</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} value={field.value ? field.value.toISOString().split('T')[0] : ''} />
+                  <Input
+                    type="date"
+                    value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                    onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
