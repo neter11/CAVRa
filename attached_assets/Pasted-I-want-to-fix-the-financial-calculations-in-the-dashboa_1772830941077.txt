@@ -1,0 +1,101 @@
+I want to fix the financial calculations in the dashboard.
+
+The system should calculate values ONLY for the current month.
+
+Please implement the correct logic for monthly calculations.
+
+1️⃣ Gross Monthly Revenue (Receita Bruta Mensal)
+
+This value must be the sum of all rent payments marked as "paid" for the current month.
+
+Example:
+If the current month is March and 3 properties have their rent marked as paid:
+
+Property A = 2000
+Property B = 1500
+Property C = 1800
+
+Gross Monthly Revenue = 5300
+
+If a payment is unchecked, the value must be removed from the total automatically.
+
+---
+
+2️⃣ Monthly Expenses (Despesas do Mês)
+
+Sum all expenses recorded for the current month.
+
+This includes:
+- maintenance
+- tasks marked as completed
+- repairs
+
+---
+
+3️⃣ Net Monthly Profit (Lucro Líquido Mensal)
+
+Calculate using:
+
+Net Monthly Profit = Gross Monthly Revenue - Monthly Expenses
+
+---
+
+4️⃣ Important Rule
+
+Do NOT increment or decrement values manually.
+
+Instead, always recalculate totals based on the current state of:
+
+• payment history
+• recorded expenses
+
+This ensures that if a rent payment is checked or unchecked, the dashboard updates correctly.
+
+---
+
+5️⃣ UI
+
+The dashboard should display three cards:
+
+Receita Bruta Mensal  
+Despesas do Mês  
+Lucro Líquido Mensal
+
+All values should update instantly when data changes.
+
+Keep everything in Portuguese and maintain the current UI style.
+
+There is a bug in the monthly profit calculation.
+
+Problem:
+When I mark a rent payment as "paid", the Net Profit increases correctly.
+
+However, when I uncheck the payment, the Net Profit does not update correctly.
+
+Expected behavior:
+
+The financial dashboard must always recalculate the values based on the current data.
+
+Correct logic:
+
+1. Gross Monthly Revenue (Receita Bruta Mensal)
+Sum all rent payments marked as "paid" for the current month.
+
+2. Monthly Expenses (Despesas do Mês)
+Sum all recorded expenses for the current month.
+
+3. Net Monthly Profit (Lucro Líquido Mensal)
+
+Net Monthly Profit = Gross Monthly Revenue - Monthly Expenses
+
+Important rule:
+
+Do NOT increment or decrement profit values manually.
+
+Instead, always recompute the totals from the current state of:
+- payment history
+- recorded expenses
+
+This ensures that if a payment is checked or unchecked, the numbers always remain correct.
+
+Keep the interface in Portuguese and do not modify other features.

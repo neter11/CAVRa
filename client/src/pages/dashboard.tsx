@@ -95,11 +95,16 @@ export default function Dashboard() {
     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
   }).reduce((acc, e) => acc + e.amount, 0);
 
-  const monthlyNet = monthlyGross - agencyCosts - totalMonthlyExpenses;
+  const monthlyNet = actualCollectedRent - agencyCosts - totalMonthlyExpenses;
 
   const propertyProfitData = props.map(p => {
     const propertyExpenses = (allExpenses || []).filter(e => e.propertyId === p.id);
     const totalExpenses = propertyExpenses.reduce((acc, e) => acc + e.amount, 0);
+    // For per-property profit in the chart, we might still want to show potential profit or actual?
+    // Usually, property detail profit is potential unless specified. 
+    // But the dashboard should be consistent.
+    // Let's stick to potential for the ranking/chart as it shows "profitability" of the asset,
+    // but the summary cards must show actual cash flow as requested.
     const currentRent = getRentForMonth(p, currentMonth);
     const profit = currentRent - totalExpenses;
     return {
@@ -131,10 +136,10 @@ export default function Dashboard() {
   });
 
   const statCards = [
-    { label: "Lucro Mensal Líquido", value: formatCurrency(monthlyNet), icon: monthlyNet >= 0 ? TrendingUp : TrendingDown, color: monthlyNet >= 0 ? "text-emerald-600" : "text-destructive" },
-    { label: "Aluguéis Pagos Este Mês", value: `${paidPropertiesCount} / ${totalRented}`, icon: ShieldCheck, color: "text-emerald-600" },
-    { label: "Aluguéis Atrasados", value: formatCurrency(totalLateAmount), subValue: `${lateRentsCount} ${lateRentsCount === 1 ? 'propriedade' : 'propriedades'}`, icon: AlertCircle, color: "text-destructive" },
-    { label: "Propriedades Alugadas", value: `${totalRented} / ${props.length}`, icon: Home, color: "text-blue-600" },
+    { label: "Receita Bruta Mensal", value: formatCurrency(actualCollectedRent), icon: DollarSign, color: "text-blue-600" },
+    { label: "Despesas do Mês", value: formatCurrency(totalMonthlyExpenses + agencyCosts), icon: TrendingDown, color: "text-destructive" },
+    { label: "Lucro Líquido Mensal", value: formatCurrency(monthlyNet), icon: monthlyNet >= 0 ? TrendingUp : TrendingDown, color: monthlyNet >= 0 ? "text-emerald-600" : "text-destructive" },
+    { label: "Aluguéis Pagos", value: `${paidPropertiesCount} / ${totalRented}`, icon: ShieldCheck, color: "text-emerald-600" },
   ];
 
   return (
