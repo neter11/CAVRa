@@ -1,0 +1,120 @@
+I want you to create a modern and professional real estate property management website for personal use.
+
+This is the first draft (layout version), so focus on design, structure, and functionality. Be creative and suggest additional useful features beyond what I describe.
+
+🎨 Design Requirements:
+
+Clean and modern UI
+
+White background with blue details (buttons, highlights, icons, accents)
+
+Minimalist but premium look
+
+Responsive design (desktop first, but should work on mobile)
+
+Smooth animations and modern dashboard feel
+
+🏠 Main Purpose:
+
+This website will help me manage 7 properties (houses and a countryside house/chácara).
+I want full control of income and management in one place.
+
+📊 Main Dashboard:
+
+Create a main dashboard that shows:
+
+Total monthly gross income (from all properties)
+
+Total real estate agency costs
+
+Total net monthly income (after subtracting agency fees)
+
+Number of rented properties
+
+Number of available properties
+
+Clean visual cards with icons
+
+A simple monthly income chart (bar or line chart)
+
+➕ “Add Property” Section:
+
+Create a form where I can add a property with the following fields:
+
+Property name
+
+Location
+
+Type (House / Countryside House / Other)
+
+Monthly rental value
+
+Is it managed by a real estate agency? (Yes / No toggle)
+
+If YES → show field: Real estate agency price
+
+Automatically calculate:
+
+Net income (Rental value minus agency price)
+
+Include:
+
+Save button
+
+Edit property option
+
+Delete property option
+
+🏘 Property Details Dashboard:
+
+Create another dashboard page where I can:
+
+View all properties in a clean card layout
+
+Click on a property to open detailed view
+
+Inside details page, you can creatively suggest useful features such as:
+
+Payment history
+
+Occupancy status
+
+Contract start/end date
+
+Notes section
+
+Maintenance control
+
+Expense tracking per property
+
+Profit history
+
+Image upload for each property
+
+Be creative and suggest smart management tools that would be useful for a landlord.
+
+⚙️ Technical Suggestions:
+
+You can decide the best stack, but I prefer:
+
+Modern frontend (React, Next.js, or similar)
+
+Clean component structure
+
+Organized folders
+
+Simple local storage or database structure for now
+
+Easy to expand later
+
+This is only the first version, so feel free to:
+
+Improve the structure
+
+Suggest better dashboard ideas
+
+Add useful real estate management features
+
+Make it look like a premium SaaS product
+
+The final result should look professional, organized, and scalable.
