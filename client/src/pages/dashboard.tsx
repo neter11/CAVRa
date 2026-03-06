@@ -59,8 +59,16 @@ export default function Dashboard() {
 
   const paidPropertiesIds = new Set((rentPaymentsMonth || []).map(rp => rp.propertyId));
   const lateProperties = rentedProperties.filter(p => {
-    return currentDay > p.rentDueDay && !paidPropertiesIds.has(p.id);
-  });
+    // A property is late if:
+    // 1. Today's day is > rentDueDay
+    // 2. There is no payment record for the current month and year
+    const isUnpaid = !paidPropertiesIds.has(p.id);
+    const isPastDue = currentDay > p.rentDueDay;
+    return isUnpaid && isPastDue;
+  }).map(p => ({
+    ...p,
+    daysOverdue: currentDay - p.rentDueDay
+  }));
 
   const lateRentsCount = lateProperties.length;
   const totalLateAmount = lateProperties.reduce((acc, p) => acc + p.rentAmount, 0);
@@ -97,7 +105,7 @@ export default function Dashboard() {
   const statCards = [
     { label: "Lucro Mensal Líquido", value: formatCurrency(monthlyNet), icon: monthlyNet >= 0 ? TrendingUp : TrendingDown, color: monthlyNet >= 0 ? "text-emerald-600" : "text-destructive" },
     { label: "Aluguéis Pagos Este Mês", value: `${paidPropertiesCount} / ${totalRented}`, icon: ShieldCheck, color: "text-emerald-600" },
-    { label: "Aluguéis Atrasados", value: formatCurrency(totalLateAmount), subValue: `${lateRentsCount} propriedades`, icon: AlertCircle, color: "text-destructive" },
+    { label: "Aluguéis Atrasados", value: formatCurrency(totalLateAmount), subValue: `${lateRentsCount} ${lateRentsCount === 1 ? 'propriedade' : 'propriedades'}`, icon: AlertCircle, color: "text-destructive" },
     { label: "Propriedades Alugadas", value: `${totalRented} / ${props.length}`, icon: Home, color: "text-blue-600" },
   ];
 
@@ -144,7 +152,7 @@ export default function Dashboard() {
                   <p className="font-bold text-destructive">{formatCurrency(p.rentAmount)}</p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground justify-end">
                     <Clock className="h-3 w-3" />
-                    <span>{currentDay - p.rentDueDay} dias de atraso (Venceu dia {p.rentDueDay})</span>
+                    <span>{p.daysOverdue} {p.daysOverdue === 1 ? 'dia' : 'dias'} de atraso (Venceu dia {p.rentDueDay})</span>
                   </div>
                 </div>
               </Link>

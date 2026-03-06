@@ -285,7 +285,12 @@ export default function PropertyDetails() {
 
           <TabsContent value="history" className="mt-0">
              <div className="flex justify-between items-center border-b pb-4 mb-6">
-               <h3 className="text-lg font-bold font-display flex items-center gap-2"><History className="h-5 w-5 text-primary" /> Histórico de Pagamentos</h3>
+               <div className="space-y-1">
+                 <h3 className="text-lg font-bold font-display flex items-center gap-2"><History className="h-5 w-5 text-primary" /> Histórico de Pagamentos</h3>
+                 <p className="text-sm text-muted-foreground font-medium flex items-center gap-1.5">
+                   <Clock className="h-3.5 w-3.5" /> Dia de Vencimento: <span className="text-foreground font-bold">{property.rentDueDay}</span>
+                 </p>
+               </div>
                <div className="flex items-center gap-2">
                  <Button variant="outline" size="sm" onClick={() => setSelectedYear(selectedYear - 1)}>-</Button>
                  <span className="font-bold px-2">{selectedYear}</span>
@@ -311,7 +316,10 @@ export default function PropertyDetails() {
                     onClick={() => togglePaymentMutation.mutate({ month: index, year: selectedYear })}
                    >
                      <div className="flex justify-between items-start">
-                       <span className={cn("font-bold", isPaid ? "text-emerald-700" : isLate ? "text-destructive" : "text-foreground")}>{monthName}</span>
+                       <div className="flex flex-col">
+                         <span className={cn("font-bold", isPaid ? "text-emerald-700" : isLate ? "text-destructive" : "text-foreground")}>{monthName}</span>
+                         <span className="text-[10px] text-muted-foreground">Vence dia {property.rentDueDay}</span>
+                       </div>
                        <div className={cn(
                          "h-5 w-5 rounded border flex items-center justify-center transition-colors",
                          isPaid ? "bg-emerald-500 border-emerald-500 text-white" : 
