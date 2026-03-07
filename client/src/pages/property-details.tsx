@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Edit, Trash2, Calendar, MapPin, DollarSign, Building, FileText, History, Check, X, AlertCircle, Clock } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Calendar, MapPin, DollarSign, Building, FileText, History, Check, X, AlertCircle, Clock, Home, BarChart3, NotepadText } from "lucide-react";
 import { useProperty, useDeleteProperty } from "@/hooks/use-properties";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -330,15 +330,29 @@ export default function PropertyDetails() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full max-w-2xl bg-muted/50 p-1 rounded-xl">
-          <TabsTrigger value="overview" className="rounded-lg">Visão Geral</TabsTrigger>
-          <TabsTrigger value="history" className="rounded-lg">Histórico</TabsTrigger>
-          <TabsTrigger value="notes" className="rounded-lg">Notas</TabsTrigger>
-          <TabsTrigger value="expenses" className="rounded-lg">Despesas</TabsTrigger>
-          <TabsTrigger value="tenant" className="rounded-lg">Inquilino</TabsTrigger>
-          <TabsTrigger value="photos" className="rounded-lg">Fotos</TabsTrigger>
-        </TabsList>
-        <div className="mt-6 bg-card border rounded-2xl p-6 min-h-[400px]">
+        <div className="border-b bg-muted/30 rounded-t-2xl overflow-x-auto">
+          <TabsList className="flex w-full h-auto bg-transparent p-0 rounded-none space-x-0">
+            <TabsTrigger value="overview" className="rounded-none flex-1 border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
+              <Home className="h-4 w-4" /> Visão Geral
+            </TabsTrigger>
+            <TabsTrigger value="history" className="rounded-none flex-1 border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
+              <BarChart3 className="h-4 w-4" /> Histórico
+            </TabsTrigger>
+            <TabsTrigger value="expenses" className="rounded-none flex-1 border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
+              <DollarSign className="h-4 w-4" /> Despesas
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="rounded-none flex-1 border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
+              <NotepadText className="h-4 w-4" /> Notas
+            </TabsTrigger>
+            <TabsTrigger value="tenant" className="rounded-none flex-1 border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
+              <User className="h-4 w-4" /> Inquilino
+            </TabsTrigger>
+            <TabsTrigger value="photos" className="rounded-none flex-1 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
+              <ImageIcon className="h-4 w-4" /> Fotos
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        <div className="mt-0 bg-card border border-t-0 rounded-b-2xl p-6 min-h-[400px]">
           <TabsContent value="overview" className="mt-0 space-y-6">
             <h3 className="text-lg font-bold font-display flex items-center gap-2 border-b pb-4"><FileText className="h-5 w-5 text-primary" /> Detalhes do Contrato</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
