@@ -113,4 +113,9 @@
   .hover-elevate {
     @apply transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5;
   }
+
+  /* Safe area support for mobile notch */
+  .safe-area-inset-bottom {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
 }
