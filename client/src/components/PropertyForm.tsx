@@ -96,16 +96,16 @@ export function PropertyForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-6 sm:px-0">
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome da Propriedade</FormLabel>
-                <FormControl><Input placeholder="Apartamento Solar" {...field} /></FormControl>
-                <FormMessage />
+                <FormLabel className="text-sm font-medium">Nome da Propriedade</FormLabel>
+                <FormControl><Input placeholder="Apartamento Solar" className="h-10" {...field} /></FormControl>
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -114,9 +114,9 @@ export function PropertyForm({
             name="location"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Localização</FormLabel>
-                <FormControl><Input placeholder="Rua Principal, 123" {...field} /></FormControl>
-                <FormMessage />
+                <FormLabel className="text-sm font-medium">Localização</FormLabel>
+                <FormControl><Input placeholder="Rua Principal, 123" className="h-10" {...field} /></FormControl>
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -125,10 +125,10 @@ export function PropertyForm({
             name="type"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tipo</FormLabel>
+                <FormLabel className="text-sm font-medium">Tipo</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                    <SelectTrigger className="h-10"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="apartment">Apartamento</SelectItem>
@@ -137,7 +137,7 @@ export function PropertyForm({
                     <SelectItem value="commercial">Comercial</SelectItem>
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -146,10 +146,10 @@ export function PropertyForm({
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel className="text-sm font-medium">Status</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger>
+                    <SelectTrigger className="h-10"><SelectValue placeholder="Selecione o status" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="available">Disponível</SelectItem>
@@ -157,22 +157,22 @@ export function PropertyForm({
                     <SelectItem value="maintenance">Manutenção</SelectItem>
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
         </div>
 
-        <div className="bg-muted/50 p-4 rounded-xl border space-y-4">
+        <div className="bg-muted/50 p-4 sm:p-5 rounded-xl border space-y-4 mx-6 sm:mx-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="rentAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor do Aluguel (R$)</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
-                  <FormMessage />
+                  <FormLabel className="text-sm font-medium">Valor do Aluguel (R$)</FormLabel>
+                  <FormControl><Input type="number" className="h-10" {...field} /></FormControl>
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -182,9 +182,9 @@ export function PropertyForm({
               name="rentDueDay"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Dia de Vencimento</FormLabel>
-                  <FormControl><Input type="number" min={1} max={31} {...field} /></FormControl>
-                  <FormMessage />
+                  <FormLabel className="text-sm font-medium">Dia de Vencimento</FormLabel>
+                  <FormControl><Input type="number" className="h-10" min={1} max={31} {...field} /></FormControl>
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -193,12 +193,12 @@ export function PropertyForm({
               control={form.control}
               name="isAgencyManaged"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 pt-8">
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md sm:p-0 sm:pt-6">
                   <FormControl>
                     <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Gerenciado por Imobiliária</FormLabel>
+                    <FormLabel className="text-sm font-medium">Gerenciado por Imobiliária</FormLabel>
                   </div>
                 </FormItem>
               )}
@@ -211,30 +211,31 @@ export function PropertyForm({
               name="agencyFee"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Taxa da Imobiliária (R$)</FormLabel>
-                  <FormControl><Input type="number" {...field} /></FormControl>
-                  <FormMessage />
+                  <FormLabel className="text-sm font-medium">Taxa da Imobiliária (R$)</FormLabel>
+                  <FormControl><Input type="number" className="h-10" {...field} /></FormControl>
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
           )}
 
-          <div className="pt-2 flex justify-between items-center text-sm font-medium border-t">
+          <div className="pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-xs sm:text-sm font-medium border-t">
             <span className="text-muted-foreground">Renda Líquida Estimada:</span>
-            <span className="text-lg text-primary">R$ {netIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês</span>
+            <span className="text-base sm:text-lg text-primary font-semibold">R$ {netIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-6 sm:px-0">
           <FormField
             control={form.control}
             name="contractStart"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Início do Contrato</FormLabel>
+                <FormLabel className="text-sm font-medium">Início do Contrato</FormLabel>
                 <FormControl>
                   <Input
                     type="date"
+                    className="h-10"
                     value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
                     onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
                     onBlur={field.onBlur}
@@ -242,7 +243,7 @@ export function PropertyForm({
                     ref={field.ref}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -251,10 +252,11 @@ export function PropertyForm({
             name="contractEnd"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Fim do Contrato</FormLabel>
+                <FormLabel className="text-sm font-medium">Fim do Contrato</FormLabel>
                 <FormControl>
                   <Input
                     type="date"
+                    className="h-10"
                     value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
                     onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
                     onBlur={field.onBlur}
@@ -262,7 +264,7 @@ export function PropertyForm({
                     ref={field.ref}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -272,16 +274,16 @@ export function PropertyForm({
           control={form.control}
           name="imageUrl"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>URL da Imagem (Opcional)</FormLabel>
-              <FormControl><Input placeholder="https://..." {...field} value={field.value || ''} /></FormControl>
-              <FormMessage />
+            <FormItem className="px-6 sm:px-0">
+              <FormLabel className="text-sm font-medium">URL da Imagem (Opcional)</FormLabel>
+              <FormControl><Input placeholder="https://..." className="h-10" {...field} value={field.value || ''} /></FormControl>
+              <FormMessage className="text-xs" />
             </FormItem>
           )}
         />
 
-        <div className="flex justify-end pt-4">
-          <Button type="submit" disabled={isPending} className="w-full sm:w-auto px-8">
+        <div className="flex gap-3 pt-4 px-6 sm:px-0 sticky bottom-0 bg-background">
+          <Button type="submit" disabled={isPending} className="flex-1 sm:flex-initial h-10 sm:h-auto sm:px-8">
             {isPending ? "Salvando..." : initialData ? "Atualizar Propriedade" : "Adicionar Propriedade"}
           </Button>
         </div>

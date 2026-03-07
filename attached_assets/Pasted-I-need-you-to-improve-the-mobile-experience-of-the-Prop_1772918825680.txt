@@ -1,0 +1,71 @@
+I need you to improve the mobile experience of the "Propriedades" section of my website.
+
+Important:
+The desktop version is already working well, so do NOT change the desktop layout unless necessary.
+Focus on fixing the mobile version only.
+
+Current problems on mobile:
+1. The navigation inside the Properties section feels awkward and visually strange.
+2. The layout is not comfortable to use on small screens.
+3. The "Adicionar Casa" / add property area is buggy on mobile.
+4. The form to add a property does not behave properly on small screens.
+
+Please refactor the Properties page to be fully mobile-friendly.
+
+Requirements:
+
+1. Mobile-first improvements for the Properties page
+- Make the properties page easy to navigate on phones
+- Improve spacing, alignment, and card layout
+- Avoid content overflowing horizontally
+- Make all property cards fit properly on small screens
+- Ensure buttons are easy to tap
+
+2. Improve property cards on mobile
+- Stack content vertically when needed
+- Make text readable without breaking layout
+- Ensure action buttons (edit, delete, view details) are properly aligned on small screens
+- Prevent cramped layouts
+
+3. Fix the "Adicionar Casa" form on mobile
+- The add property form must open and work correctly on small screens
+- If it is a modal/dialog, make sure it becomes mobile-friendly:
+  - proper width
+  - scrollable content
+  - enough spacing
+  - buttons visible at the bottom
+- If necessary, convert the modal into a full-screen mobile sheet/drawer
+- Make sure the keyboard on mobile does not break the form layout
+
+4. Improve form usability on mobile
+- Inputs must be full width
+- Labels must remain readable
+- Dropdowns/selects must work properly
+- Form sections should stack vertically
+- Buttons like "Salvar" must always be visible and easy to click
+
+5. Keep desktop unchanged
+- Do not break the current desktop design
+- Only apply responsive improvements for tablet/mobile breakpoints
+
+6. Keep the same design language
+- White background
+- Blue accents
+- Modern SaaS style
+- Portuguese labels
+
+7. Make all important functions in the Properties page work on mobile:
+- view property details
+- add property
+- edit property
+- delete property
+- navigate comfortably through the section
+
+8. Optional improvement
+- If needed, add a mobile-friendly top action bar in the Properties page with:
+  - search
+  - add property button
+  - filters
+
+Goal:
+The Properties section should feel smooth, clear, and natural to use on a phone, while keeping the desktop version as it is.

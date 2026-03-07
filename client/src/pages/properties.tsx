@@ -97,36 +97,42 @@ export default function Properties() {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-6 md:space-y-8 h-full flex flex-col">
+      <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Propriedades</h1>
-          <p className="text-muted-foreground mt-1">Gerencie e acompanhe seus ativos imobiliários.</p>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">Propriedades</h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">Gerencie e acompanhe seus ativos imobiliários.</p>
         </div>
         
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-transform">
-              <Plus className="h-4 w-4" /> Adicionar Propriedade
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle className="font-display text-2xl">Nova Propriedade</DialogTitle>
-            </DialogHeader>
-            <PropertyForm onSuccess={() => setIsAddOpen(false)} />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input 
-          placeholder="Pesquisar propriedades..." 
-          className="pl-10 bg-card border-muted-foreground/20"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-initial sm:max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <Input 
+              placeholder="Pesquisar propriedades..." 
+              className="pl-10 bg-card border-muted-foreground/20 h-10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-transform h-10">
+                <Plus className="h-4 w-4 flex-shrink-0" /> 
+                <span className="hidden xs:inline">Adicionar Propriedade</span>
+                <span className="inline xs:hidden">Adicionar</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="w-[95vw] sm:w-full sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl">
+              <DialogHeader className="sticky top-0 bg-background pt-4 pb-2 -mx-6 px-6">
+                <DialogTitle className="font-display text-2xl">Nova Propriedade</DialogTitle>
+              </DialogHeader>
+              <div className="overflow-y-auto px-0 py-4">
+                <PropertyForm onSuccess={() => setIsAddOpen(false)} />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {isLoading ? (
