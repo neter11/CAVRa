@@ -209,6 +209,26 @@ export const api = {
         404: errorSchemas.notFound,
       },
     },
+    resetMonth: {
+      method: 'POST' as const,
+      path: '/api/tasks/reset/month' as const,
+      responses: { 200: z.object({ deletedCount: z.number() }) },
+    },
+    resetCompleted: {
+      method: 'POST' as const,
+      path: '/api/tasks/reset/completed' as const,
+      responses: { 200: z.object({ deletedCount: z.number() }) },
+    },
+    resetAll: {
+      method: 'POST' as const,
+      path: '/api/tasks/reset/all' as const,
+      responses: { 200: z.object({ deletedCount: z.number() }) },
+    },
+    getCounts: {
+      method: 'GET' as const,
+      path: '/api/tasks/counts/affected' as const,
+      responses: { 200: z.object({ month: z.number(), completed: z.number(), all: z.number() }) },
+    },
   }
 };
 

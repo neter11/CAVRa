@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, ClipboardList, Plus, Trash2, MapPin, DollarSign } from "lucide-react";
+import { Calendar as CalendarIcon, ClipboardList, Plus, Trash2, MapPin, DollarSign, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useForm } from "react-hook-form";
@@ -19,6 +19,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTaskSchema } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { ResetTasksModal } from "@/components/reset-tasks-modal";
 
 export default function Tasks() {
   const queryClient = useQueryClient();
@@ -28,6 +29,7 @@ export default function Tasks() {
   const deleteTask = useDeleteTask();
   const createTask = useCreateTask();
   const [isOpen, setIsOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm({
@@ -72,10 +74,18 @@ export default function Tasks() {
           <p className="text-muted-foreground mt-1">Gerencie manutenções e reparos.</p>
         </div>
 
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="h-4 w-4" /> Nova Tarefa</Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button 
+            variant="destructive" 
+            onClick={() => setIsResetModalOpen(true)}
+            className="gap-2"
+          >
+            <RotateCcw className="h-4 w-4" /> Resetar Tarefas
+          </Button>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2"><Plus className="h-4 w-4" /> Nova Tarefa</Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Adicionar Nova Tarefa</DialogTitle>
@@ -156,8 +166,11 @@ export default function Tasks() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
+
+      <ResetTasksModal isOpen={isResetModalOpen} onOpenChange={setIsResetModalOpen} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <section className="space-y-4">

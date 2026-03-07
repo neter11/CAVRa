@@ -238,6 +238,67 @@ export async function registerRoutes(
     }
   });
 
+  // -- RESET TASKS --
+  app.get("/api/tasks/counts/affected", async (req, res) => {
+    const allTasks = await storage.getTasks();
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const monthTasks = allTasks.filter(task => {
+      const taskDate = new Date(task.createdAt);
+      return taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;
+    });
+    
+    const completedTasks = allTasks.filter(t => t.status === "completed");
+    
+    res.json({
+      month: monthTasks.length,
+      completed: completedTasks.length,
+      all: allTasks.length
+    });
+  });
+
+  app.post("/api/tasks/reset/month", async (req, res) => {
+    const allTasks = await storage.getTasks();
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    let deletedCount = 0;
+    for (const task of allTasks) {
+      const taskDate = new Date(task.createdAt);
+      if (taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear) {
+        await storage.deleteTask(task.id);
+        deletedCount++;
+      }
+    }
+    
+    res.json({ deletedCount });
+  });
+
+  app.post("/api/tasks/reset/completed", async (req, res) => {
+    const allTasks = await storage.getTasks();
+    let deletedCount = 0;
+    for (const task of allTasks) {
+      if (task.status === "completed") {
+        await storage.deleteTask(task.id);
+        deletedCount++;
+      }
+    }
+    res.json({ deletedCount });
+  });
+
+  app.post("/api/tasks/reset/all", async (req, res) => {
+    const allTasks = await storage.getTasks();
+    let deletedCount = 0;
+    for (const task of allTasks) {
+      await storage.deleteTask(task.id);
+      deletedCount++;
+    }
+    res.json({ deletedCount });
+  });
+
   // SEED DATA
   async function seedDatabase() {
     const existingProperties = await storage.getProperties();

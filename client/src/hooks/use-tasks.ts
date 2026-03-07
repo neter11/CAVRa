@@ -97,3 +97,74 @@ export function useDeleteTask() {
     },
   });
 }
+
+export function useTaskCounts() {
+  return useQuery({
+    queryKey: ["/api/tasks/counts/affected"],
+    queryFn: async () => {
+      const res = await fetch("/api/tasks/counts/affected", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch task counts");
+      return res.json() as Promise<{ month: number; completed: number; all: number }>;
+    },
+  });
+}
+
+export function useResetTasksMonth() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/tasks/reset/month", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to reset month tasks");
+      return res.json() as Promise<{ deletedCount: number }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.tasks.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/counts/affected"] });
+      queryClient.invalidateQueries({ queryKey: [api.properties.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/all-expenses"] });
+    },
+  });
+}
+
+export function useResetTasksCompleted() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/tasks/reset/completed", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to reset completed tasks");
+      return res.json() as Promise<{ deletedCount: number }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.tasks.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/counts/affected"] });
+      queryClient.invalidateQueries({ queryKey: [api.properties.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/all-expenses"] });
+    },
+  });
+}
+
+export function useResetTasksAll() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/tasks/reset/all", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to reset all tasks");
+      return res.json() as Promise<{ deletedCount: number }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.tasks.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/counts/affected"] });
+      queryClient.invalidateQueries({ queryKey: [api.properties.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/all-expenses"] });
+    },
+  });
+}
