@@ -186,6 +186,40 @@ export async function registerRoutes(
     res.json(payments);
   });
 
+  // -- PHOTOS --
+  app.get("/api/properties/:propertyId/photos", async (req, res) => {
+    const propertyId = Number(req.params.propertyId);
+    const photos = await storage.getPhotosByPropertyId(propertyId);
+    res.json(photos);
+  });
+
+  app.post("/api/properties/:propertyId/photos", async (req, res) => {
+    try {
+      const propertyId = Number(req.params.propertyId);
+      const { url, isCover } = z.object({ url: z.string(), isCover: z.boolean().optional() }).parse(req.body);
+      const photo = await storage.addPhoto(propertyId, { url, isCover: isCover || false });
+      res.status(201).json(photo);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/photos/:id", async (req, res) => {
+    const id = Number(req.params.id);
+    await storage.deletePhoto(id);
+    res.status(204).end();
+  });
+
+  app.post("/api/photos/:id/cover", async (req, res) => {
+    const id = Number(req.params.id);
+    const photo = await storage.setCoverPhoto(id);
+    if (!photo) return res.status(404).json({ message: "Photo not found" });
+    res.json(photo);
+  });
+
   // SEED DATA
   async function seedDatabase() {
     const existingProperties = await storage.getProperties();

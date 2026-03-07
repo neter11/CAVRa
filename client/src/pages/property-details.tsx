@@ -22,6 +22,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+import { usePropertyPhotos, useAddPropertyPhoto, useDeletePropertyPhoto, useSetCoverPhoto } from "@/hooks/use-photos";
+import { Card, CardContent } from "@/components/ui/card";
+import { ImagePlus, ImageIcon, Star } from "lucide-react";
+
 export default function PropertyDetails() {
   const { id } = useParams();
   const propertyId = parseInt(id || "0", 10);
@@ -39,7 +43,13 @@ export default function PropertyDetails() {
   const createExpense = useCreateExpense();
   const deleteExpense = useDeleteExpense();
 
+  const { data: photos, isLoading: isLoadingPhotos } = usePropertyPhotos(propertyId);
+  const addPhotoMutation = useAddPropertyPhoto(propertyId);
+  const deletePhotoMutation = useDeletePropertyPhoto(propertyId);
+  const setCoverMutation = useSetCoverPhoto(propertyId);
+
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [newPhotoUrl, setNewPhotoUrl] = useState("");
   const [isRentHistoryOpen, setIsRentHistoryOpen] = useState(false);
   const [newRentValue, setNewRentValue] = useState("");
   const currentMonth = new Date().getMonth();
@@ -320,6 +330,7 @@ export default function PropertyDetails() {
           <TabsTrigger value="history" className="rounded-lg">Histórico</TabsTrigger>
           <TabsTrigger value="notes" className="rounded-lg">Notas</TabsTrigger>
           <TabsTrigger value="expenses" className="rounded-lg">Despesas</TabsTrigger>
+          <TabsTrigger value="photos" className="rounded-lg">Fotos</TabsTrigger>
         </TabsList>
         <div className="mt-6 bg-card border rounded-2xl p-6 min-h-[400px]">
           <TabsContent value="overview" className="mt-0 space-y-6">
@@ -399,6 +410,91 @@ export default function PropertyDetails() {
     }
 }}><Trash2 className="h-4 w-4" /></Button></div></div>
               ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="photos" className="mt-0">
+            <div className="flex flex-col space-y-6">
+              <div className="flex justify-between items-center border-b pb-4">
+                <h3 className="text-lg font-bold font-display flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5 text-primary" /> Fotos do Imóvel
+                </h3>
+              </div>
+
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (newPhotoUrl.trim()) {
+                    addPhotoMutation.mutate(newPhotoUrl, {
+                      onSuccess: () => setNewPhotoUrl(""),
+                    });
+                  }
+                }} 
+                className="flex gap-3 items-end bg-muted/30 p-4 rounded-xl border border-muted"
+              >
+                <div className="flex-1 space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URL da Imagem</label>
+                  <Input 
+                    placeholder="https://exemplo.com/foto.jpg" 
+                    value={newPhotoUrl} 
+                    onChange={(e) => setNewPhotoUrl(e.target.value)} 
+                  />
+                </div>
+                <Button type="submit" className="gap-2" disabled={addPhotoMutation.isPending || !newPhotoUrl.trim()}>
+                  <ImagePlus className="h-4 w-4" /> Adicionar Foto
+                </Button>
+              </form>
+
+              {isLoadingPhotos ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {[1, 2, 3].map(i => <div key={i} className="aspect-video bg-muted animate-pulse rounded-xl" />)}
+                </div>
+              ) : photos && photos.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {photos.map((photo: any) => (
+                    <Card key={photo.id} className="overflow-hidden group relative border-none shadow-sm hover:shadow-md transition-shadow">
+                      <CardContent className="p-0 aspect-video relative">
+                        <img src={photo.url} alt="Foto do imóvel" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className={cn("h-8 gap-1.5", photo.isCover && "bg-amber-500 text-white hover:bg-amber-600 border-none")}
+                            onClick={() => setCoverMutation.mutate(photo.id)}
+                            disabled={setCoverMutation.isPending}
+                          >
+                            <Star className={cn("h-3.5 w-3.5", photo.isCover && "fill-current")} />
+                            {photo.isCover ? "Capa" : "Definir Capa"}
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => deletePhotoMutation.mutate(photo.id)}
+                            disabled={deletePhotoMutation.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                        {photo.isCover && (
+                          <div className="absolute top-2 left-2">
+                            <Badge className="bg-amber-500 hover:bg-amber-500 text-white border-none shadow-sm gap-1">
+                              <Star className="h-3 w-3 fill-current" /> Capa
+                            </Badge>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 border-2 border-dashed rounded-2xl bg-muted/10">
+                  <div className="bg-muted w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">Nenhuma foto cadastrada para este imóvel.</p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </div>

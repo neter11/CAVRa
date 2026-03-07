@@ -19,6 +19,13 @@ export const properties = pgTable("properties", {
   rentHistory: text("rent_history").array().notNull().default([]), // Array of JSON strings: { value: number, startMonth: number }
 });
 
+export const propertyPhotos = pgTable("property_photos", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  url: text("url").notNull(),
+  isCover: boolean("is_cover").notNull().default(false),
+});
+
 export const notes = pgTable("notes", {
   id: serial("id").primaryKey(),
   propertyId: integer("property_id").notNull(),
@@ -59,6 +66,14 @@ export const propertiesRelations = relations(properties, ({ many }) => ({
   expenses: many(expenses),
   tasks: many(tasks),
   rentPayments: many(rentPayments),
+  photos: many(propertyPhotos),
+}));
+
+export const propertyPhotosRelations = relations(propertyPhotos, ({ one }) => ({
+  property: one(properties, {
+    fields: [propertyPhotos.propertyId],
+    references: [properties.id],
+  }),
 }));
 
 export const rentPaymentsRelations = relations(rentPayments, ({ one }) => ({
@@ -103,6 +118,10 @@ export const insertPropertySchema = createInsertSchema(properties, {
 export type Property = typeof properties.$inferSelect;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
 export type UpdatePropertyRequest = Partial<InsertProperty>;
+
+export const insertPropertyPhotoSchema = createInsertSchema(propertyPhotos).omit({ id: true });
+export type PropertyPhoto = typeof propertyPhotos.$inferSelect;
+export type InsertPropertyPhoto = z.infer<typeof insertPropertyPhotoSchema>;
 
 export const insertNoteSchema = createInsertSchema(notes).omit({ id: true, createdAt: true });
 export type Note = typeof notes.$inferSelect;

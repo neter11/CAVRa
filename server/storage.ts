@@ -10,11 +10,14 @@ import {
   type InsertTask,
   type RentPayment,
   type InsertRentPayment,
+  type PropertyPhoto,
+  type InsertPropertyPhoto,
   properties,
   notes,
   expenses,
   tasks,
-  rentPayments
+  rentPayments,
+  propertyPhotos
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, or } from "drizzle-orm";
@@ -49,9 +52,58 @@ export interface IStorage {
   getRentPaymentsByPropertyId(propertyId: number, year: number): Promise<RentPayment[]>;
   toggleRentPayment(propertyId: number, month: number, year: number): Promise<void>;
   getAllRentPaymentsForMonth(month: number, year: number): Promise<RentPayment[]>;
+
+  // Photos
+  getPhotosByPropertyId(propertyId: number): Promise<PropertyPhoto[]>;
+  addPhoto(propertyId: number, photo: Omit<InsertPropertyPhoto, "propertyId">): Promise<PropertyPhoto>;
+  deletePhoto(id: number): Promise<void>;
+  setCoverPhoto(id: number): Promise<PropertyPhoto | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
+  // Photos
+  async getPhotosByPropertyId(propertyId: number): Promise<PropertyPhoto[]> {
+    return await db.select().from(propertyPhotos).where(eq(propertyPhotos.propertyId, propertyId));
+  }
+
+  async addPhoto(propertyId: number, insertPhoto: Omit<InsertPropertyPhoto, "propertyId">): Promise<PropertyPhoto> {
+    const [photo] = await db
+      .insert(propertyPhotos)
+      .values({ ...insertPhoto, propertyId })
+      .returning();
+    return photo;
+  }
+
+  async deletePhoto(id: number): Promise<void> {
+    await db.delete(propertyPhotos).where(eq(propertyPhotos.id, id));
+  }
+
+  async setCoverPhoto(id: number): Promise<PropertyPhoto | undefined> {
+    const [photo] = await db.select().from(propertyPhotos).where(eq(propertyPhotos.id, id));
+    if (!photo) return undefined;
+
+    // Reset all covers for this property
+    await db
+      .update(propertyPhotos)
+      .set({ isCover: false })
+      .where(eq(propertyPhotos.propertyId, photo.propertyId));
+
+    // Set new cover
+    const [updated] = await db
+      .update(propertyPhotos)
+      .set({ isCover: true })
+      .where(eq(propertyPhotos.id, id))
+      .returning();
+
+    // Update main property image
+    await db
+      .update(properties)
+      .set({ imageUrl: updated.url })
+      .where(eq(properties.id, photo.propertyId));
+
+    return updated;
+  }
+
   // Properties
   async getProperties(): Promise<Property[]> {
     return await db.select().from(properties);
