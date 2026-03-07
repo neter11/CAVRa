@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, Link } from "wouter";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -62,6 +62,8 @@ export default function PropertyDetails() {
   const [newNote, setNewNote] = useState("");
   const [newExpenseDesc, setNewExpenseDesc] = useState("");
   const [newExpenseAmount, setNewExpenseAmount] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateRentHistoryMutation = useMutation({
     mutationFn: async (history: string[]) => {
@@ -180,6 +182,36 @@ export default function PropertyDetails() {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const isMaintenance = (tasks || []).some(t => t.propertyId === propertyId && t.status === "pending") || 
                         (expenses || []).some(e => e.date && new Date(e.date) >= thirtyDaysAgo);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: "Erro", description: "Por favor, selecione uma imagem válida.", variant: "destructive" });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setPreviewImage(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleConfirmPhoto = () => {
+    if (previewImage) {
+      addPhotoMutation.mutate(previewImage, {
+        onSuccess: () => {
+          setPreviewImage(null);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+        },
+      });
+    }
+  };
 
   const getStatusLabel = (status: string) => {
     if (isMaintenance) return 'MANUTENÇÃO';
@@ -626,30 +658,91 @@ export default function PropertyDetails() {
                 </h3>
               </div>
 
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (newPhotoUrl.trim()) {
-                    addPhotoMutation.mutate(newPhotoUrl, {
-                      onSuccess: () => setNewPhotoUrl(""),
-                    });
-                  }
-                }} 
-                className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end bg-muted/30 p-4 rounded-xl border border-muted"
-              >
-                <div className="flex-1 space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URL da Imagem</label>
-                  <Input 
-                    placeholder="https://exemplo.com/foto.jpg" 
-                    value={newPhotoUrl} 
-                    onChange={(e) => setNewPhotoUrl(e.target.value)}
-                    className="h-10"
-                  />
+              <div className="space-y-4">
+                <div className="flex flex-col gap-4 bg-muted/30 p-5 rounded-xl border border-muted">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input 
+                      ref={fileInputRef}
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      data-testid="input-file-photo"
+                    />
+                    <Button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="gap-2 flex-1 sm:flex-none"
+                      disabled={addPhotoMutation.isPending}
+                      data-testid="button-select-photo"
+                    >
+                      <ImagePlus className="h-4 w-4" /> Selecionar Foto
+                    </Button>
+                    <div className="hidden sm:block text-xs text-muted-foreground self-center">ou</div>
+                    <div className="flex-1 border-b-2 sm:border-b-0 sm:border-l-2 border-muted sm:pl-4" />
+                  </div>
+                  
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (newPhotoUrl.trim()) {
+                        addPhotoMutation.mutate(newPhotoUrl, {
+                          onSuccess: () => setNewPhotoUrl(""),
+                        });
+                      }
+                    }} 
+                    className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end"
+                  >
+                    <div className="flex-1 space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">Cole a URL da Imagem</label>
+                      <Input 
+                        placeholder="https://exemplo.com/foto.jpg" 
+                        value={newPhotoUrl} 
+                        onChange={(e) => setNewPhotoUrl(e.target.value)}
+                        className="h-10"
+                        data-testid="input-photo-url"
+                      />
+                    </div>
+                    <Button type="submit" className="gap-2 h-10 sm:h-auto sm:px-4" disabled={addPhotoMutation.isPending || !newPhotoUrl.trim()}>
+                      <ImagePlus className="h-4 w-4" />
+                    </Button>
+                  </form>
                 </div>
-                <Button type="submit" className="gap-2 h-10 sm:h-auto sm:px-4" disabled={addPhotoMutation.isPending || !newPhotoUrl.trim()}>
-                  <ImagePlus className="h-4 w-4" /> <span className="hidden sm:inline">Foto</span>
-                </Button>
-              </form>
+              </div>
+
+              <Dialog open={!!previewImage} onOpenChange={(open) => { if (!open) setPreviewImage(null); }}>
+                <DialogContent className="w-[95vw] sm:w-full sm:max-w-[600px] rounded-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Visualizar Foto Antes de Salvar</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {previewImage && (
+                      <div className="relative bg-muted rounded-xl overflow-hidden">
+                        <img 
+                          src={previewImage} 
+                          alt="Preview" 
+                          className="w-full h-auto max-h-[400px] object-contain"
+                        />
+                      </div>
+                    )}
+                    <div className="flex gap-3 justify-end">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setPreviewImage(null)}
+                        data-testid="button-cancel-photo"
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        onClick={handleConfirmPhoto}
+                        disabled={addPhotoMutation.isPending}
+                        data-testid="button-confirm-photo"
+                      >
+                        {addPhotoMutation.isPending ? "Salvando..." : "Salvar Foto"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               {isLoadingPhotos ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -660,7 +753,7 @@ export default function PropertyDetails() {
                   {photos.map((photo: any) => (
                     <Card key={photo.id} className="overflow-hidden group relative border-none shadow-sm hover:shadow-md transition-shadow">
                       <CardContent className="p-0 aspect-video relative">
-                        <img src={photo.url} alt="Foto do imóvel" className="w-full h-full object-cover" />
+                        <img src={photo.url} alt="Foto do imóvel" className="w-full h-full object-cover" data-testid={`img-photo-${photo.id}`} />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                           <Button 
                             variant="secondary" 
@@ -668,6 +761,7 @@ export default function PropertyDetails() {
                             className={cn("h-8 gap-1.5", photo.isCover && "bg-amber-500 text-white hover:bg-amber-600 border-none")}
                             onClick={() => setCoverMutation.mutate(photo.id)}
                             disabled={setCoverMutation.isPending}
+                            data-testid={`button-set-cover-${photo.id}`}
                           >
                             <Star className={cn("h-3.5 w-3.5", photo.isCover && "fill-current")} />
                             {photo.isCover ? "Capa" : "Definir Capa"}
@@ -678,6 +772,7 @@ export default function PropertyDetails() {
                             className="h-8 w-8"
                             onClick={() => deletePhotoMutation.mutate(photo.id)}
                             disabled={deletePhotoMutation.isPending}
+                            data-testid={`button-delete-photo-${photo.id}`}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
