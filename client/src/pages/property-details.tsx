@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { usePropertyPhotos, useAddPropertyPhoto, useDeletePropertyPhoto, useSetCoverPhoto } from "@/hooks/use-photos";
 import { useLocalPhotos } from "@/hooks/use-local-photos";
+import { compressImage } from "@/lib/image-compression";
 import { useTenant, useUpsertTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { ImagePlus, ImageIcon, Star, User, Phone, Mail, Briefcase, Info, Heart, Wallet, ShieldCheck, Plus } from "lucide-react";
@@ -68,6 +69,7 @@ export default function PropertyDetails() {
   const [newExpenseDesc, setNewExpenseDesc] = useState("");
   const [newExpenseAmount, setNewExpenseAmount] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateRentHistoryMutation = useMutation({
@@ -197,21 +199,36 @@ export default function PropertyDetails() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setPreviewImage(dataUrl);
-    };
-    reader.readAsDataURL(file);
+    setIsCompressing(true);
+    try {
+      const compressedDataUrl = await compressImage(file);
+      setPreviewImage(compressedDataUrl);
+    } catch (error: any) {
+      toast({ 
+        title: "Erro", 
+        description: error.message || "Não foi possível processar a imagem.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const handleConfirmPhoto = () => {
     if (previewImage) {
-      addLocalPhoto(previewImage);
-      toast({ title: "Sucesso", description: "Foto adicionada com sucesso!" });
-      setPreviewImage(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+      try {
+        addLocalPhoto(previewImage);
+        toast({ title: "Sucesso", description: "Foto adicionada com sucesso!" });
+        setPreviewImage(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } catch (error: any) {
+        toast({ 
+          title: "Erro", 
+          description: error.message || "Não foi possível salvar a foto.", 
+          variant: "destructive" 
+        });
       }
     }
   };
@@ -675,10 +692,10 @@ export default function PropertyDetails() {
                     <Button 
                       onClick={() => fileInputRef.current?.click()}
                       className="gap-2 flex-1 sm:flex-none"
-                      disabled={addPhotoMutation.isPending}
+                      disabled={addPhotoMutation.isPending || isCompressing}
                       data-testid="button-select-photo"
                     >
-                      <ImagePlus className="h-4 w-4" /> Selecionar Foto
+                      <ImagePlus className="h-4 w-4" /> {isCompressing ? "Processando..." : "Selecionar Foto"}
                     </Button>
                     <div className="hidden sm:block text-xs text-muted-foreground self-center">ou</div>
                     <div className="flex-1 border-b-2 sm:border-b-0 sm:border-l-2 border-muted sm:pl-4" />
@@ -737,10 +754,10 @@ export default function PropertyDetails() {
                       </Button>
                       <Button 
                         onClick={handleConfirmPhoto}
-                        disabled={addPhotoMutation.isPending}
+                        disabled={isCompressing}
                         data-testid="button-confirm-photo"
                       >
-                        {addPhotoMutation.isPending ? "Salvando..." : "Salvar Foto"}
+                        Salvar Foto
                       </Button>
                     </div>
                   </div>
