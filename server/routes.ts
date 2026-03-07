@@ -220,6 +220,24 @@ export async function registerRoutes(
     res.json(photo);
   });
 
+  // -- TENANTS --
+  app.get("/api/properties/:propertyId/tenant", async (req, res) => {
+    const propertyId = Number(req.params.propertyId);
+    const tenant = await storage.getTenantByPropertyId(propertyId);
+    if (!tenant) return res.status(404).json({ message: "Tenant not found" });
+    res.json(tenant);
+  });
+
+  app.post("/api/properties/:propertyId/tenant", async (req, res) => {
+    try {
+      const propertyId = Number(req.params.propertyId);
+      const tenant = await storage.upsertTenant(propertyId, req.body);
+      res.json(tenant);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // SEED DATA
   async function seedDatabase() {
     const existingProperties = await storage.getProperties();

@@ -26,6 +26,27 @@ export const propertyPhotos = pgTable("property_photos", {
   isCover: boolean("is_cover").notNull().default(false),
 });
 
+export const tenants = pgTable("tenants", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().unique(),
+  name: text("name").notNull(),
+  document: text("document"),
+  phone: text("phone"),
+  email: text("email"),
+  birthDate: text("birth_date"),
+  monthlyIncome: integer("monthly_income"),
+  creditScore: integer("credit_score"),
+  profession: text("profession"),
+  employer: text("employer"),
+  employmentTime: text("employment_time"),
+  emergencyContactName: text("emergency_contact_name"),
+  emergencyContactPhone: text("emergency_contact_phone"),
+  residentCount: integer("resident_count").default(1),
+  hasPets: boolean("has_pets").default(false),
+  petType: text("pet_type"),
+  observations: text("observations"),
+});
+
 export const notes = pgTable("notes", {
   id: serial("id").primaryKey(),
   propertyId: integer("property_id").notNull(),
@@ -61,12 +82,23 @@ export const rentPayments = pgTable("rent_payments", {
   paidAt: timestamp("paid_at").defaultNow(),
 });
 
-export const propertiesRelations = relations(properties, ({ many }) => ({
+export const propertiesRelations = relations(properties, ({ many, one }) => ({
   notes: many(notes),
   expenses: many(expenses),
   tasks: many(tasks),
   rentPayments: many(rentPayments),
   photos: many(propertyPhotos),
+  tenant: one(tenants, {
+    fields: [properties.id],
+    references: [tenants.propertyId],
+  }),
+}));
+
+export const tenantsRelations = relations(tenants, ({ one }) => ({
+  property: one(properties, {
+    fields: [tenants.propertyId],
+    references: [properties.id],
+  }),
 }));
 
 export const propertyPhotosRelations = relations(propertyPhotos, ({ one }) => ({
@@ -122,6 +154,10 @@ export type UpdatePropertyRequest = Partial<InsertProperty>;
 export const insertPropertyPhotoSchema = createInsertSchema(propertyPhotos).omit({ id: true });
 export type PropertyPhoto = typeof propertyPhotos.$inferSelect;
 export type InsertPropertyPhoto = z.infer<typeof insertPropertyPhotoSchema>;
+
+export const insertTenantSchema = createInsertSchema(tenants).omit({ id: true });
+export type Tenant = typeof tenants.$inferSelect;
+export type InsertTenant = z.infer<typeof insertTenantSchema>;
 
 export const insertNoteSchema = createInsertSchema(notes).omit({ id: true, createdAt: true });
 export type Note = typeof notes.$inferSelect;

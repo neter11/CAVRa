@@ -23,8 +23,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { usePropertyPhotos, useAddPropertyPhoto, useDeletePropertyPhoto, useSetCoverPhoto } from "@/hooks/use-photos";
+import { useTenant, useUpsertTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
-import { ImagePlus, ImageIcon, Star } from "lucide-react";
+import { ImagePlus, ImageIcon, Star, User, Phone, Mail, Briefcase, Info, Heart, Wallet, ShieldCheck, Plus } from "lucide-react";
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -48,7 +49,11 @@ export default function PropertyDetails() {
   const deletePhotoMutation = useDeletePropertyPhoto(propertyId);
   const setCoverMutation = useSetCoverPhoto(propertyId);
 
+  const { data: tenant, isLoading: isLoadingTenant } = useTenant(propertyId);
+  const upsertTenantMutation = useUpsertTenant(propertyId);
+
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isTenantDialogOpen, setIsTenantDialogOpen] = useState(false);
   const [newPhotoUrl, setNewPhotoUrl] = useState("");
   const [isRentHistoryOpen, setIsRentHistoryOpen] = useState(false);
   const [newRentValue, setNewRentValue] = useState("");
@@ -330,6 +335,7 @@ export default function PropertyDetails() {
           <TabsTrigger value="history" className="rounded-lg">Histórico</TabsTrigger>
           <TabsTrigger value="notes" className="rounded-lg">Notas</TabsTrigger>
           <TabsTrigger value="expenses" className="rounded-lg">Despesas</TabsTrigger>
+          <TabsTrigger value="tenant" className="rounded-lg">Inquilino</TabsTrigger>
           <TabsTrigger value="photos" className="rounded-lg">Fotos</TabsTrigger>
         </TabsList>
         <div className="mt-6 bg-card border rounded-2xl p-6 min-h-[400px]">
@@ -410,6 +416,193 @@ export default function PropertyDetails() {
     }
 }}><Trash2 className="h-4 w-4" /></Button></div></div>
               ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="tenant" className="mt-0">
+            <div className="flex flex-col space-y-6">
+              <div className="flex justify-between items-center border-b pb-4">
+                <h3 className="text-lg font-bold font-display flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" /> Informações do Inquilino
+                </h3>
+                <Dialog open={isTenantDialogOpen} onOpenChange={setIsTenantDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      {tenant ? <><Edit className="h-4 w-4" /> Editar Informações</> : <><Plus className="h-4 w-4" /> Adicionar Inquilino</>}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>{tenant ? "Editar Inquilino" : "Adicionar Inquilino"}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      const data = Object.fromEntries(formData.entries());
+                      upsertTenantMutation.mutate({
+                        name: data.name as string,
+                        document: data.document as string,
+                        phone: data.phone as string,
+                        email: data.email as string,
+                        birthDate: data.birthDate as string,
+                        monthlyIncome: Number(data.monthlyIncome) || 0,
+                        creditScore: Number(data.creditScore) || 0,
+                        profession: data.profession as string,
+                        employer: data.employer as string,
+                        employmentTime: data.employmentTime as string,
+                        emergencyContactName: data.emergencyContactName as string,
+                        emergencyContactPhone: data.emergencyContactPhone as string,
+                        residentCount: Number(data.residentCount) || 1,
+                        hasPets: data.hasPets === "on",
+                        petType: data.petType as string,
+                        observations: data.observations as string,
+                      }, {
+                        onSuccess: () => setIsTenantDialogOpen(false),
+                      });
+                    }} className="space-y-6 pt-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Nome Completo</label>
+                          <Input name="name" defaultValue={tenant?.name} required />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">CPF ou Documento</label>
+                          <Input name="document" defaultValue={tenant?.document || ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Telefone</label>
+                          <Input name="phone" defaultValue={tenant?.phone || ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Email</label>
+                          <Input name="email" type="email" defaultValue={tenant?.email || ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Data de Nascimento</label>
+                          <Input name="birthDate" type="date" defaultValue={tenant?.birthDate || ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Renda Mensal (R$)</label>
+                          <Input name="monthlyIncome" type="number" defaultValue={tenant?.monthlyIncome || ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Score de Crédito</label>
+                          <Input name="creditScore" type="number" defaultValue={tenant?.creditScore || ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Profissão</label>
+                          <Input name="profession" defaultValue={tenant?.profession || ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Empresa</label>
+                          <Input name="employer" defaultValue={tenant?.employer || ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Tempo de Emprego</label>
+                          <Input name="employmentTime" defaultValue={tenant?.employmentTime || ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Contato de Emergência</label>
+                          <Input name="emergencyContactName" defaultValue={tenant?.emergencyContactName || ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Tel. Emergência</label>
+                          <Input name="emergencyContactPhone" defaultValue={tenant?.emergencyContactPhone || ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Nº de Moradores</label>
+                          <Input name="residentCount" type="number" defaultValue={tenant?.residentCount || 1} />
+                        </div>
+                        <div className="flex items-center space-x-2 pt-8">
+                          <input type="checkbox" name="hasPets" id="hasPets" defaultChecked={tenant?.hasPets || false} className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                          <label htmlFor="hasPets" className="text-xs font-medium">Possui Animais</label>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium">Tipo de Animal</label>
+                          <Input name="petType" defaultValue={tenant?.petType || ""} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium">Observações Gerais</label>
+                        <Textarea name="observations" defaultValue={tenant?.observations || ""} className="min-h-[100px]" />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={upsertTenantMutation.isPending}>
+                        {upsertTenantMutation.isPending ? "Salvando..." : "Salvar Informações"}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              {isLoadingTenant ? (
+                <div className="space-y-4 animate-pulse">
+                  <div className="h-32 bg-muted rounded-xl" />
+                  <div className="h-64 bg-muted rounded-xl" />
+                </div>
+              ) : tenant ? (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 bg-primary/5 p-6 rounded-2xl border border-primary/10 shadow-sm">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                      <User className="h-8 w-8 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold text-primary">{tenant.name}</h4>
+                      <div className="flex flex-wrap gap-4 mt-1 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4" /> {tenant.document || "Doc não informado"}</span>
+                        <span className="flex items-center gap-1.5"><Phone className="h-4 w-4" /> {tenant.phone || "Sem telefone"}</span>
+                        <span className="flex items-center gap-1.5"><Mail className="h-4 w-4" /> {tenant.email || "Sem email"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card className="shadow-sm border-muted/60">
+                      <CardContent className="p-6 space-y-4">
+                        <h5 className="font-bold flex items-center gap-2 text-primary/80 border-b pb-2"><Wallet className="h-4 w-4" /> Informações Financeiras</h5>
+                        <div className="grid grid-cols-2 gap-y-4 text-sm">
+                          <div><p className="text-muted-foreground text-xs uppercase tracking-wider">Renda Mensal</p><p className="font-bold text-emerald-600">{tenant.monthlyIncome ? formatCurrency(tenant.monthlyIncome) : "Não informada"}</p></div>
+                          <div><p className="text-muted-foreground text-xs uppercase tracking-wider">Score de Crédito</p><p className="font-bold text-amber-600">{tenant.creditScore || "N/A"}</p></div>
+                          <div className="col-span-2"><p className="text-muted-foreground text-xs uppercase tracking-wider">Profissão / Empresa</p><p className="font-semibold flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5" /> {tenant.profession || "N/A"} {tenant.employer ? `na ${tenant.employer}` : ""}</p></div>
+                          <div><p className="text-muted-foreground text-xs uppercase tracking-wider">Tempo de Emprego</p><p className="font-medium">{tenant.employmentTime || "Não informado"}</p></div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm border-muted/60">
+                      <CardContent className="p-6 space-y-4">
+                        <h5 className="font-bold flex items-center gap-2 text-primary/80 border-b pb-2"><ShieldCheck className="h-4 w-4" /> Contato de Emergência</h5>
+                        <div className="space-y-4 text-sm">
+                          <div><p className="text-muted-foreground text-xs uppercase tracking-wider">Nome do Contato</p><p className="font-bold">{tenant.emergencyContactName || "Não informado"}</p></div>
+                          <div><p className="text-muted-foreground text-xs uppercase tracking-wider">Telefone</p><p className="font-bold flex items-center gap-1.5 text-primary"><Phone className="h-3.5 w-3.5" /> {tenant.emergencyContactPhone || "Não informado"}</p></div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm border-muted/60 md:col-span-2">
+                      <CardContent className="p-6 space-y-4">
+                        <h5 className="font-bold flex items-center gap-2 text-primary/80 border-b pb-2"><Info className="h-4 w-4" /> Informações Adicionais</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                          <div><p className="text-muted-foreground text-xs uppercase tracking-wider">Moradores</p><p className="font-bold">{tenant.residentCount} {tenant.residentCount === 1 ? "pessoa" : "pessoas"}</p></div>
+                          <div><p className="text-muted-foreground text-xs uppercase tracking-wider">Animais de Estimação</p><p className="font-bold flex items-center gap-1.5">{tenant.hasPets ? <><Heart className="h-4 w-4 text-rose-500 fill-rose-500" /> Sim ({tenant.petType})</> : "Não possui"}</p></div>
+                          <div><p className="text-muted-foreground text-xs uppercase tracking-wider">Nascimento</p><p className="font-medium">{tenant.birthDate ? format(new Date(tenant.birthDate), "dd/MM/yyyy") : "Não informado"}</p></div>
+                          <div className="md:col-span-3"><p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Observações</p><div className="bg-muted/30 p-3 rounded-lg text-xs italic">{tenant.observations || "Nenhuma observação."}</div></div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-16 border-2 border-dashed rounded-2xl bg-muted/10">
+                  <div className="bg-muted w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <User className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h4 className="font-bold text-lg mb-1">Nenhum inquilino cadastrado</h4>
+                  <p className="text-muted-foreground mb-6">Cadastre as informações do locatário para esta propriedade.</p>
+                  <Button onClick={() => setIsTenantDialogOpen(true)} className="gap-2">
+                    <Plus className="h-4 w-4" /> Adicionar Inquilino
+                  </Button>
+                </div>
+              )}
             </div>
           </TabsContent>
 

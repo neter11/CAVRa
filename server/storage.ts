@@ -12,12 +12,15 @@ import {
   type InsertRentPayment,
   type PropertyPhoto,
   type InsertPropertyPhoto,
+  type Tenant,
+  type InsertTenant,
   properties,
   notes,
   expenses,
   tasks,
   rentPayments,
-  propertyPhotos
+  propertyPhotos,
+  tenants
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, or } from "drizzle-orm";
@@ -58,9 +61,36 @@ export interface IStorage {
   addPhoto(propertyId: number, photo: Omit<InsertPropertyPhoto, "propertyId">): Promise<PropertyPhoto>;
   deletePhoto(id: number): Promise<void>;
   setCoverPhoto(id: number): Promise<PropertyPhoto | undefined>;
+
+  // Tenants
+  getTenantByPropertyId(propertyId: number): Promise<Tenant | undefined>;
+  upsertTenant(propertyId: number, tenant: Omit<InsertTenant, "propertyId">): Promise<Tenant>;
 }
 
 export class DatabaseStorage implements IStorage {
+  // Tenants
+  async getTenantByPropertyId(propertyId: number): Promise<Tenant | undefined> {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.propertyId, propertyId));
+    return tenant;
+  }
+
+  async upsertTenant(propertyId: number, insertTenant: Omit<InsertTenant, "propertyId">): Promise<Tenant> {
+    const existing = await this.getTenantByPropertyId(propertyId);
+    if (existing) {
+      const [updated] = await db
+        .update(tenants)
+        .set(insertTenant)
+        .where(eq(tenants.propertyId, propertyId))
+        .returning();
+      return updated;
+    }
+    const [newTenant] = await db
+      .insert(tenants)
+      .values({ ...insertTenant, propertyId })
+      .returning();
+    return newTenant;
+  }
+
   // Photos
   async getPhotosByPropertyId(propertyId: number): Promise<PropertyPhoto[]> {
     return await db.select().from(propertyPhotos).where(eq(propertyPhotos.propertyId, propertyId));
