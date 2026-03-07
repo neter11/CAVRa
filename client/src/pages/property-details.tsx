@@ -70,6 +70,7 @@ export default function PropertyDetails() {
   const [newExpenseAmount, setNewExpenseAmount] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [fullViewImage, setFullViewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateRentHistoryMutation = useMutation({
@@ -345,7 +346,11 @@ export default function PropertyDetails() {
 
       <div className="bg-card rounded-2xl sm:rounded-3xl border shadow-sm overflow-hidden">
         <div className="h-40 sm:h-48 md:h-64 w-full relative bg-muted">
-          {property.imageUrl ? <img src={property.imageUrl} alt={property.name} className="w-full h-full object-cover" /> : <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1280&h=720&fit=crop" alt="Placeholder" className="w-full h-full object-cover opacity-80" />}
+          {(() => {
+            const coverPhoto = photos_list?.find((p: any) => p.isCover);
+            const imageToDisplay = coverPhoto?.url || property.imageUrl || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1280&h=720&fit=crop";
+            return <img src={imageToDisplay} alt={property.name} className={cn("w-full h-full object-cover", !coverPhoto && !property.imageUrl && "opacity-80")} />;
+          })()}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <div className="absolute bottom-3 sm:bottom-6 left-3 sm:left-6 right-3 sm:right-6 text-white flex flex-col gap-2 sm:gap-0 sm:flex-row sm:justify-between sm:items-end">
             <div className="flex-1">
@@ -764,6 +769,27 @@ export default function PropertyDetails() {
                 </DialogContent>
               </Dialog>
 
+              <Dialog open={!!fullViewImage} onOpenChange={(open) => { if (!open) setFullViewImage(null); }}>
+                <DialogContent className="w-[95vw] sm:w-full sm:max-w-[900px] max-h-[90vh] rounded-2xl overflow-auto p-0">
+                  {fullViewImage && (
+                    <div className="relative w-full h-full flex items-center justify-center bg-black/80">
+                      <button
+                        onClick={() => setFullViewImage(null)}
+                        className="absolute top-4 right-4 z-50 p-2 hover:bg-white/20 rounded-lg transition-colors"
+                        data-testid="button-close-fullview"
+                      >
+                        <X className="h-6 w-6 text-white" />
+                      </button>
+                      <img 
+                        src={fullViewImage} 
+                        alt="Visualização completa" 
+                        className="w-full h-full max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
+
               {isLoadingPhotos || isLoadingLocal ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[1, 2, 3].map(i => <div key={i} className="aspect-video bg-muted animate-pulse rounded-xl" />)}
@@ -771,7 +797,7 @@ export default function PropertyDetails() {
               ) : photos_list && photos_list.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {photos_list.map((photo: any) => (
-                    <Card key={photo.id} className="overflow-hidden group relative border-none shadow-sm hover:shadow-md transition-shadow">
+                    <Card key={photo.id} className="overflow-hidden group relative border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => setFullViewImage(photo.url)}>
                       <CardContent className="p-0 aspect-video relative">
                         <img src={photo.url} alt="Foto do imóvel" className="w-full h-full object-cover" data-testid={`img-photo-${photo.id}`} />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -779,9 +805,11 @@ export default function PropertyDetails() {
                             variant="secondary" 
                             size="sm" 
                             className={cn("h-8 gap-1.5", photo.isCover && "bg-amber-500 text-white hover:bg-amber-600 border-none")}
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (photos.length > 0) {
                                 setLocalCoverPhoto(photo.id);
+                                toast({ title: "Sucesso", description: "Capa definida com sucesso!" });
                               } else {
                                 setCoverMutation.mutate(photo.id);
                               }
@@ -796,7 +824,8 @@ export default function PropertyDetails() {
                             variant="destructive" 
                             size="icon" 
                             className="h-8 w-8"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (photos.length > 0) {
                                 deleteLocalPhoto(photo.id);
                                 toast({ title: "Sucesso", description: "Foto removida com sucesso!" });
