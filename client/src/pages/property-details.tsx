@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { usePropertyPhotos, useAddPropertyPhoto, useDeletePropertyPhoto, useSetCoverPhoto } from "@/hooks/use-photos";
+import { useLocalPhotos } from "@/hooks/use-local-photos";
 import { useTenant, useUpsertTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { ImagePlus, ImageIcon, Star, User, Phone, Mail, Briefcase, Info, Heart, Wallet, ShieldCheck, Plus } from "lucide-react";
@@ -44,10 +45,14 @@ export default function PropertyDetails() {
   const createExpense = useCreateExpense();
   const deleteExpense = useDeleteExpense();
 
-  const { data: photos, isLoading: isLoadingPhotos } = usePropertyPhotos(propertyId);
+  const { data: dbPhotos, isLoading: isLoadingPhotos } = usePropertyPhotos(propertyId);
   const addPhotoMutation = useAddPropertyPhoto(propertyId);
   const deletePhotoMutation = useDeletePropertyPhoto(propertyId);
   const setCoverMutation = useSetCoverPhoto(propertyId);
+  
+  const { photos, isLoading: isLoadingLocal, addPhoto: addLocalPhoto, deletePhoto: deleteLocalPhoto, setCoverPhoto: setLocalCoverPhoto } = useLocalPhotos(propertyId);
+  
+  const photos_list = photos.length > 0 ? photos : dbPhotos;
 
   const { data: tenant, isLoading: isLoadingTenant } = useTenant(propertyId);
   const upsertTenantMutation = useUpsertTenant(propertyId);
@@ -202,14 +207,12 @@ export default function PropertyDetails() {
 
   const handleConfirmPhoto = () => {
     if (previewImage) {
-      addPhotoMutation.mutate(previewImage, {
-        onSuccess: () => {
-          setPreviewImage(null);
-          if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-          }
-        },
-      });
+      addLocalPhoto(previewImage);
+      toast({ title: "Sucesso", description: "Foto adicionada com sucesso!" });
+      setPreviewImage(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -744,13 +747,13 @@ export default function PropertyDetails() {
                 </DialogContent>
               </Dialog>
 
-              {isLoadingPhotos ? (
+              {isLoadingPhotos || isLoadingLocal ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[1, 2, 3].map(i => <div key={i} className="aspect-video bg-muted animate-pulse rounded-xl" />)}
                 </div>
-              ) : photos && photos.length > 0 ? (
+              ) : photos_list && photos_list.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {photos.map((photo: any) => (
+                  {photos_list.map((photo: any) => (
                     <Card key={photo.id} className="overflow-hidden group relative border-none shadow-sm hover:shadow-md transition-shadow">
                       <CardContent className="p-0 aspect-video relative">
                         <img src={photo.url} alt="Foto do imóvel" className="w-full h-full object-cover" data-testid={`img-photo-${photo.id}`} />
@@ -759,7 +762,13 @@ export default function PropertyDetails() {
                             variant="secondary" 
                             size="sm" 
                             className={cn("h-8 gap-1.5", photo.isCover && "bg-amber-500 text-white hover:bg-amber-600 border-none")}
-                            onClick={() => setCoverMutation.mutate(photo.id)}
+                            onClick={() => {
+                              if (photos.length > 0) {
+                                setLocalCoverPhoto(photo.id);
+                              } else {
+                                setCoverMutation.mutate(photo.id);
+                              }
+                            }}
                             disabled={setCoverMutation.isPending}
                             data-testid={`button-set-cover-${photo.id}`}
                           >
@@ -770,7 +779,14 @@ export default function PropertyDetails() {
                             variant="destructive" 
                             size="icon" 
                             className="h-8 w-8"
-                            onClick={() => deletePhotoMutation.mutate(photo.id)}
+                            onClick={() => {
+                              if (photos.length > 0) {
+                                deleteLocalPhoto(photo.id);
+                                toast({ title: "Sucesso", description: "Foto removida com sucesso!" });
+                              } else {
+                                deletePhotoMutation.mutate(photo.id);
+                              }
+                            }}
                             disabled={deletePhotoMutation.isPending}
                             data-testid={`button-delete-photo-${photo.id}`}
                           >
