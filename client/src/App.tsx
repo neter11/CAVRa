@@ -10,6 +10,7 @@ import Properties from "./pages/properties";
 import PropertyDetails from "./pages/property-details";
 import Tasks from "./pages/tasks";
 import { AppSidebar } from "./components/app-sidebar";
+import { MobileNav } from "./components/mobile-nav";
 
 function Router() {
   return (
@@ -33,8 +34,25 @@ function App() {
       <TooltipProvider>
         <SidebarProvider style={style as React.CSSProperties}>
           <div className="flex min-h-screen w-full bg-background/50">
-            <AppSidebar />
+            {/* Desktop Sidebar */}
+            <div className="hidden md:block">
+              <AppSidebar />
+            </div>
+            
             <div className="flex flex-col flex-1 w-full h-screen overflow-y-auto">
+              {/* Mobile Header */}
+              <div className="md:hidden border-b border-border/40 px-4 py-3 flex items-center justify-between bg-white dark:bg-slate-950">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm shadow-lg shadow-primary/20">
+                    E
+                  </div>
+                  <div>
+                    <p className="font-display font-bold text-sm tracking-tight">EstateFlow</p>
+                  </div>
+                </div>
+                <MobileNav />
+              </div>
+
               <main className="flex-1">
                 <Router />
               </main>
