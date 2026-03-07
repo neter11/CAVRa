@@ -202,17 +202,17 @@ export default function PropertyDetails() {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
-        <Link href="/properties" className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="h-4 w-4 mr-2" /> Voltar para Propriedades
+    <div className="p-4 md:p-10 max-w-5xl mx-auto space-y-6 md:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <Link href="/properties" className="flex items-center text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors h-10">
+          <ArrowLeft className="h-4 w-4 mr-2 flex-shrink-0" /> Voltar
         </Link>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Dialog open={isRentHistoryOpen} onOpenChange={setIsRentHistoryOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2"><History className="h-4 w-4" /> Histórico de Aluguel</Button>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs sm:text-sm h-9 px-2 sm:px-3"><History className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" /> <span className="hidden sm:inline">Histórico</span></Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="w-[95vw] sm:w-full sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl">
               <DialogHeader><DialogTitle>Histórico de Valor do Aluguel</DialogTitle></DialogHeader>
               <div className="space-y-6 pt-4">
                 <form onSubmit={handleAddRentHistory} className="space-y-4 p-4 border rounded-xl bg-muted/30">
@@ -268,15 +268,15 @@ export default function PropertyDetails() {
           </Dialog>
 
           <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-            <DialogTrigger asChild><Button variant="outline" size="sm" className="gap-2"><Edit className="h-4 w-4" /> Editar</Button></DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader><DialogTitle>Editar Propriedade</DialogTitle></DialogHeader>
-              <PropertyForm initialData={property} onSuccess={() => setIsEditOpen(false)} />
+            <DialogTrigger asChild><Button variant="outline" size="sm" className="gap-1.5 text-xs sm:text-sm h-9 px-2 sm:px-3"><Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" /> <span className="hidden sm:inline">Editar</span></Button></DialogTrigger>
+            <DialogContent className="w-[95vw] sm:w-full sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl">
+              <DialogHeader className="sticky top-0 bg-background pt-4 pb-2 -mx-6 px-6"><DialogTitle>Editar Propriedade</DialogTitle></DialogHeader>
+              <div className="overflow-y-auto px-0 py-4"><PropertyForm initialData={property} onSuccess={() => setIsEditOpen(false)} /></div>
             </DialogContent>
           </Dialog>
 
           <AlertDialog>
-            <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="gap-2"><Trash2 className="h-4 w-4" /> Excluir</Button></AlertDialogTrigger>
+            <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="gap-1.5 text-xs sm:text-sm h-9 px-2 sm:px-3"><Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" /> <span className="hidden sm:inline">Excluir</span></Button></AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
@@ -291,68 +291,68 @@ export default function PropertyDetails() {
         </div>
       </div>
 
-      <div className="bg-card rounded-3xl border shadow-sm overflow-hidden">
-        <div className="h-48 md:h-64 w-full relative bg-muted">
+      <div className="bg-card rounded-2xl sm:rounded-3xl border shadow-sm overflow-hidden">
+        <div className="h-40 sm:h-48 md:h-64 w-full relative bg-muted">
           {property.imageUrl ? <img src={property.imageUrl} alt={property.name} className="w-full h-full object-cover" /> : <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1280&h=720&fit=crop" alt="Placeholder" className="w-full h-full object-cover opacity-80" />}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <div className="absolute bottom-6 left-6 right-6 text-white flex justify-between items-end">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Badge variant={isMaintenance ? "destructive" : "secondary"} className={cn("backdrop-blur-md border-white/10", isMaintenance ? "bg-destructive/80 text-white" : "bg-white/20 text-white")}>{getStatusLabel(property.status)}</Badge>
+          <div className="absolute bottom-3 sm:bottom-6 left-3 sm:left-6 right-3 sm:right-6 text-white flex flex-col gap-2 sm:gap-0 sm:flex-row sm:justify-between sm:items-end">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3 flex-wrap">
+                <Badge variant={isMaintenance ? "destructive" : "secondary"} className={cn("backdrop-blur-md border-white/10 text-xs sm:text-sm", isMaintenance ? "bg-destructive/80 text-white" : "bg-white/20 text-white")}>{getStatusLabel(property.status)}</Badge>
                 {isCurrentMonthLate && (
-                  <TooltipProvider><Tooltip><TooltipTrigger asChild><Badge variant="destructive" className="bg-destructive/80 text-white animate-pulse gap-1"><AlertCircle className="h-3 w-3" /> Pagamento Atrasado</Badge></TooltipTrigger><TooltipContent><p>Vencimento dia {property.rentDueDay}. Hoje é dia {currentDay}.</p></TooltipContent></Tooltip></TooltipProvider>
+                  <TooltipProvider><Tooltip><TooltipTrigger asChild><Badge variant="destructive" className="bg-destructive/80 text-white animate-pulse gap-0.5 sm:gap-1 text-xs sm:text-sm"><AlertCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3" /> <span className="hidden sm:inline">Pagamento Atrasado</span></Badge></TooltipTrigger><TooltipContent><p>Vencimento dia {property.rentDueDay}. Hoje é dia {currentDay}.</p></TooltipContent></Tooltip></TooltipProvider>
                 )}
               </div>
-              <h1 className="text-3xl md:text-4xl font-display font-bold text-white">{property.name}</h1>
-              <div className="flex items-center mt-2 text-white/80"><MapPin className="h-4 w-4 mr-1.5" /> {property.location}</div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white line-clamp-2">{property.name}</h1>
+              <div className="flex items-center mt-1 sm:mt-2 text-white/80 text-xs sm:text-sm"><MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" /> <span className="line-clamp-1">{property.location}</span></div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 divide-x md:divide-y-0 divide-y border-b">
-          <div className="p-4 md:p-6 flex flex-col justify-center">
-            <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Aluguel Mensal</p>
-            <p className="text-2xl font-bold font-display text-primary">{formatCurrency(property.rentAmount)}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 border-b">
+          <div className="p-3 sm:p-4 md:p-6 flex flex-col justify-center">
+            <p className="text-[10px] sm:text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Aluguel</p>
+            <p className="text-lg sm:text-2xl font-bold font-display text-primary">{formatCurrency(property.rentAmount)}</p>
           </div>
-          <div className="p-4 md:p-6 flex flex-col justify-center">
-            <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Lucro Mensal</p>
-            <p className={cn("text-2xl font-bold font-display", monthlyProfit >= 0 ? "text-emerald-600" : "text-destructive")}>{formatCurrency(monthlyProfit)}</p>
+          <div className="p-3 sm:p-4 md:p-6 flex flex-col justify-center">
+            <p className="text-[10px] sm:text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Lucro</p>
+            <p className={cn("text-lg sm:text-2xl font-bold font-display", monthlyProfit >= 0 ? "text-emerald-600" : "text-destructive")}>{formatCurrency(monthlyProfit)}</p>
           </div>
-          <div className="p-4 md:p-6 flex flex-col justify-center">
-            <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Dia de Vencimento</p>
-            <p className="text-2xl font-bold font-display text-amber-600">{property.rentDueDay}</p>
+          <div className="p-3 sm:p-4 md:p-6 flex flex-col justify-center">
+            <p className="text-[10px] sm:text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Vencimento</p>
+            <p className="text-lg sm:text-2xl font-bold font-display text-amber-600">{property.rentDueDay}</p>
           </div>
-          <div className="p-4 md:p-6 flex flex-col justify-center">
-            <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Tipo</p>
-            <p className="text-lg font-bold capitalize flex items-center gap-2"><Building className="h-5 w-5 text-muted-foreground" /> {getTypeLabel(property.type)}</p>
+          <div className="p-3 sm:p-4 md:p-6 flex flex-col justify-center">
+            <p className="text-[10px] sm:text-xs uppercase tracking-wider font-medium text-muted-foreground mb-1">Tipo</p>
+            <p className="text-xs sm:text-lg font-bold capitalize flex items-center gap-1 sm:gap-2"><Building className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" /> <span className="truncate">{getTypeLabel(property.type)}</span></p>
           </div>
         </div>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
         <div className="border-b bg-muted/30 rounded-t-2xl overflow-x-auto">
-          <TabsList className="flex w-full h-auto bg-transparent p-0 rounded-none space-x-0">
-            <TabsTrigger value="overview" className="rounded-none flex-1 border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
-              <Home className="h-4 w-4" /> Visão Geral
+          <TabsList className="flex h-auto bg-transparent p-0 rounded-none space-x-0 w-full sm:w-auto">
+            <TabsTrigger value="overview" className="rounded-none flex-1 sm:flex-initial border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-3 sm:py-4 gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Visão Geral</span><span className="inline sm:hidden">Geral</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="rounded-none flex-1 border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
-              <BarChart3 className="h-4 w-4" /> Histórico
+            <TabsTrigger value="history" className="rounded-none flex-1 sm:flex-initial border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-3 sm:py-4 gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Histórico</span><span className="inline sm:hidden">Hist.</span>
             </TabsTrigger>
-            <TabsTrigger value="expenses" className="rounded-none flex-1 border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
-              <DollarSign className="h-4 w-4" /> Despesas
+            <TabsTrigger value="expenses" className="rounded-none flex-1 sm:flex-initial border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-3 sm:py-4 gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Despesas</span><span className="inline sm:hidden">Desp.</span>
             </TabsTrigger>
-            <TabsTrigger value="notes" className="rounded-none flex-1 border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
-              <NotepadText className="h-4 w-4" /> Notas
+            <TabsTrigger value="notes" className="rounded-none flex-1 sm:flex-initial border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-3 sm:py-4 gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              <NotepadText className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Notas</span><span className="inline sm:hidden">Not.</span>
             </TabsTrigger>
-            <TabsTrigger value="tenant" className="rounded-none flex-1 border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
-              <User className="h-4 w-4" /> Inquilino
+            <TabsTrigger value="tenant" className="rounded-none flex-1 sm:flex-initial border-r border-muted/50 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-3 sm:py-4 gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Inquilino</span><span className="inline sm:hidden">Inq.</span>
             </TabsTrigger>
-            <TabsTrigger value="photos" className="rounded-none flex-1 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-4 gap-2">
-              <ImageIcon className="h-4 w-4" /> Fotos
+            <TabsTrigger value="photos" className="rounded-none flex-1 sm:flex-initial data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:bg-background py-3 sm:py-4 gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              <ImageIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Fotos</span><span className="inline sm:hidden">Fot.</span>
             </TabsTrigger>
           </TabsList>
         </div>
-        <div className="mt-0 bg-card border border-t-0 rounded-b-2xl p-6 min-h-[400px]">
+        <div className="mt-0 bg-card border border-t-0 rounded-b-2xl p-4 sm:p-6 min-h-[300px]">
           <TabsContent value="overview" className="mt-0 space-y-6">
             <h3 className="text-lg font-bold font-display flex items-center gap-2 border-b pb-4"><FileText className="h-5 w-5 text-primary" /> Detalhes do Contrato</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -445,10 +445,8 @@ export default function PropertyDetails() {
                       {tenant ? <><Edit className="h-4 w-4" /> Editar Informações</> : <><Plus className="h-4 w-4" /> Adicionar Inquilino</>}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{tenant ? "Editar Inquilino" : "Adicionar Inquilino"}</DialogTitle>
-                    </DialogHeader>
+                  <DialogContent className="w-[95vw] sm:w-full sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-2xl">
+                    <DialogHeader className="sticky top-0 bg-background pt-4 pb-2 -mx-6 px-6"><DialogTitle>{tenant ? "Editar Inquilino" : "Adicionar Inquilino"}</DialogTitle></DialogHeader>
                     <form onSubmit={(e) => {
                       e.preventDefault();
                       const formData = new FormData(e.currentTarget);
@@ -473,7 +471,7 @@ export default function PropertyDetails() {
                       }, {
                         onSuccess: () => setIsTenantDialogOpen(false),
                       });
-                    }} className="space-y-6 pt-4">
+                    }} className="space-y-5 pt-4 px-6 sm:px-0">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-xs font-medium">Nome Completo</label>
@@ -637,18 +635,19 @@ export default function PropertyDetails() {
                     });
                   }
                 }} 
-                className="flex gap-3 items-end bg-muted/30 p-4 rounded-xl border border-muted"
+                className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end bg-muted/30 p-4 rounded-xl border border-muted"
               >
                 <div className="flex-1 space-y-2">
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URL da Imagem</label>
                   <Input 
                     placeholder="https://exemplo.com/foto.jpg" 
                     value={newPhotoUrl} 
-                    onChange={(e) => setNewPhotoUrl(e.target.value)} 
+                    onChange={(e) => setNewPhotoUrl(e.target.value)}
+                    className="h-10"
                   />
                 </div>
-                <Button type="submit" className="gap-2" disabled={addPhotoMutation.isPending || !newPhotoUrl.trim()}>
-                  <ImagePlus className="h-4 w-4" /> Adicionar Foto
+                <Button type="submit" className="gap-2 h-10 sm:h-auto sm:px-4" disabled={addPhotoMutation.isPending || !newPhotoUrl.trim()}>
+                  <ImagePlus className="h-4 w-4" /> <span className="hidden sm:inline">Foto</span>
                 </Button>
               </form>
 

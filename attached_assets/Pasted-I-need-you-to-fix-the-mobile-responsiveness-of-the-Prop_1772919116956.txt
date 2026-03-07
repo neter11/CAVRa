@@ -1,0 +1,75 @@
+I need you to fix the mobile responsiveness of the Property Details page.
+
+Important:
+The desktop version is fine.
+Do NOT change the desktop layout unless necessary.
+Focus on the mobile version only.
+
+Current issue:
+When I open a property's details page on mobile, the layout looks broken, loose, and poorly structured.
+It does not feel properly formatted for small screens.
+
+Please refactor the Property Details page to be fully mobile-friendly.
+
+Requirements:
+
+1. Fix the overall mobile layout
+- Make the entire Property Details page responsive for phones
+- Prevent elements from looking loose, misaligned, or disconnected
+- Improve spacing, padding, and visual hierarchy on small screens
+- Avoid horizontal overflow
+- Make all sections fit naturally inside the screen width
+
+2. Improve the top section / property header
+- Ensure the property title, badges, actions, and summary information stack properly on mobile
+- Buttons must not overflow or become cramped
+- Important actions should remain visible and easy to tap
+
+3. Improve tabs/sections on mobile
+- The details tabs such as:
+  - Visão Geral
+  - Histórico
+  - Despesas
+  - Notas
+  - Inquilino
+  - Fotos
+must work well on mobile
+- If needed, make the tabs horizontally scrollable
+- Ensure they do not break the layout or wrap in an ugly way
+- The active tab must remain visually clear
+
+4. Improve cards and content sections
+- All cards should have proper width, spacing, and stacking on small screens
+- Information inside cards should be vertically organized when needed
+- Text should remain readable
+- Prevent action buttons from colliding with text
+
+5. Improve forms and modals inside Property Details
+- Any form, modal, gallery, or card inside the details page must also work properly on mobile
+- Inputs should be full width
+- Buttons should be easy to tap
+- Content should scroll correctly if needed
+
+6. Improve images and photo gallery on mobile
+- Images must resize correctly
+- Gallery items should not overflow
+- Make the photo area clean and responsive
+
+7. Keep the current design style
+- White background
+- Blue accents
+- Modern SaaS look
+- Portuguese labels
+
+8. Do not break any existing functionality
+Everything must continue working:
+- payment history
+- expenses
+- tasks linked to the property
+- tenant info
+- photos
+- notes
+- rent history
+
+Goal:
+The Property Details page should feel polished, compact, and natural on mobile, with a professional app-like experience instead of a broken or loose layout.
