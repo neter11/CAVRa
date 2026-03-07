@@ -1,5 +1,5 @@
 import { useProperties } from "@/hooks/use-properties";
-import { Building2, DollarSign, Home, Percent, ShieldCheck, TrendingDown, TrendingUp, AlertCircle, Clock } from "lucide-react";
+import { Building2, DollarSign, Home, Percent, ShieldCheck, TrendingDown, TrendingUp, AlertCircle, Clock, Target } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useExpenses } from "@/hooks/use-expenses";
 import { useQuery } from "@tanstack/react-query";
@@ -297,6 +297,79 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <p className="font-bold text-emerald-600">{formatCurrency(item.profit)}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <h3 className="text-lg font-bold font-display mb-6">Card de Performance do Imóvel</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {propertyProfitData.map((item) => {
+                const property = props.find(p => p.id === item.id);
+                if (!property) return null;
+                
+                const propertyExpenses = (allExpenses || []).filter(e => {
+                  if (e.propertyId !== item.id) return false;
+                  const d = new Date(e.date);
+                  return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                }).reduce((acc, e) => acc + e.amount, 0);
+                
+                const grossRevenue = getRentForMonth(property, currentMonth);
+                const netProfit = grossRevenue - propertyExpenses;
+                
+                let statusBadge = { label: "Lucrativo", color: "bg-emerald-100 text-emerald-800" };
+                if (netProfit < 0) {
+                  statusBadge = { label: "Prejuízo", color: "bg-destructive/10 text-destructive" };
+                } else if (netProfit < grossRevenue * 0.2) {
+                  statusBadge = { label: "Atenção", color: "bg-amber-100 text-amber-800" };
+                }
+                
+                return (
+                  <Link 
+                    key={item.id} 
+                    href={`/properties/${item.id}`}
+                    className="bg-white dark:bg-slate-950 border rounded-2xl p-6 hover:shadow-lg transition-all duration-200 group"
+                    data-testid={`card-performance-${item.id}`}
+                  >
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="text-lg font-bold font-display group-hover:text-primary transition-colors">{property.name}</h4>
+                          <p className="text-sm text-muted-foreground mt-1">{property.location}</p>
+                        </div>
+                        <Badge className={statusBadge.color} variant="outline">{statusBadge.label}</Badge>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4 pt-2">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="h-4 w-4 text-blue-600" />
+                            <span className="text-xs font-medium text-muted-foreground">Receita</span>
+                          </div>
+                          <p className="text-sm font-bold text-blue-600">{formatCurrency(grossRevenue)}</p>
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1">
+                            <TrendingDown className="h-4 w-4 text-destructive" />
+                            <span className="text-xs font-medium text-muted-foreground">Despesas</span>
+                          </div>
+                          <p className="text-sm font-bold text-destructive">{formatCurrency(propertyExpenses)}</p>
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1">
+                            <Target className="h-4 w-4 text-emerald-600" />
+                            <span className="text-xs font-medium text-muted-foreground">Lucro</span>
+                          </div>
+                          <p className={`text-sm font-bold ${netProfit >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                            {formatCurrency(netProfit)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </Link>
                 );
               })}
